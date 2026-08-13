@@ -7,6 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alecthomas/kong"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/argmethod"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
@@ -48,17 +49,18 @@ func Parse() (*AppConfig, error) {
 	var cmdName string
 	if err != nil {
 		if len(argsToParse) == 0 {
-			cmdName = "form"
+			cmdName = appmode.GetAppModes().Form
 		} else {
 			return nil, err
 		}
 	} else {
 		cmdName = ctx.Command()
 	}
+	appMode := appmode.GetAppModes()
 	var commandRegistry = map[string]argmethod.Method{
-		"form":  &cli.Form,
-		"list":  &cli.List,
-		"alert": &cli.Alert,
+		appMode.Form:  &cli.Form,
+		appMode.Alert: &cli.List,
+		appMode.List:  &cli.Alert,
 	}
 	cmd, ok := commandRegistry[cmdName]
 	if !ok {

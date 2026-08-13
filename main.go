@@ -11,6 +11,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
+const (
+	exitErrGeneral = 1
+)
+
 //go:embed all:frontend/dist
 var assets embed.FS
 
@@ -21,7 +25,7 @@ func main() {
 	appConfig, parseErr := args.Parse()
 	if parseErr != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", parseErr)
-		os.Exit(1)
+		os.Exit(exitErrGeneral)
 	}
 	windowConfig := appConfig.WindowConfig
 	// Create an instance of the app structure

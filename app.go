@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -26,7 +28,7 @@ type App struct {
 
 func NewApp(mode string, windowPositionConfig windowPositionConfig) *App {
 	if mode == "" {
-		mode = "form"
+		mode = appmode.GetAppModes().Form
 	}
 	return &App{
 		activeMode:           mode,
@@ -40,8 +42,11 @@ func NewApp(mode string, windowPositionConfig windowPositionConfig) *App {
 func (a *App) GetActiveMode() string {
 	return a.activeMode
 }
-func (a *App) TestFunc() string {
-	return "test"
+func (a *App) ExitWith252() {
+	os.Exit(252)
+}
+func (a *App) ExitWith1() {
+	os.Exit(1)
 }
 
 // startup is called at application startup
