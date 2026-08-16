@@ -30,11 +30,7 @@ func main() {
 	windowConfig := appConfig.WindowConfig
 	// Create an instance of the app structure
 	app := NewApp(
-		appConfig.CmdName,
-		windowPositionConfig{
-			x: windowConfig.X,
-			y: windowConfig.Y,
-		},
+		appConfig,
 	)
 
 	// Create application with options

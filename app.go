@@ -7,6 +7,7 @@ import (
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -26,16 +27,20 @@ type App struct {
 	alertCmd *alert.AlertCmd
 }
 
-func NewApp(mode string, windowPositionConfig windowPositionConfig) *App {
+func NewApp(appConfig *args.AppConfig) *App {
+	mode := appConfig.CmdName
 	if mode == "" {
 		mode = appmode.GetAppModes().Form
 	}
 	return &App{
-		activeMode:           mode,
-		windowPositionConfig: windowPositionConfig,
-		formCmd:              &form.FormCmd{},
-		listCmd:              &list.ListCmd{},
-		alertCmd:             &alert.AlertCmd{},
+		activeMode: mode,
+		windowPositionConfig: windowPositionConfig{
+			x: appConfig.WindowConfig.X,
+			y: appConfig.WindowConfig.Y,
+		},
+		formCmd:  appConfig.FormCmd,
+		listCmd:  appConfig.ListCmd,
+		alertCmd: appConfig.AlertCmd,
 	}
 }
 
@@ -47,6 +52,22 @@ func (a *App) ExitWith252() {
 }
 func (a *App) ExitWith1() {
 	os.Exit(1)
+}
+func (a *App) ExitWithNumber(exitCode int) {
+	os.Exit(exitCode)
+}
+func (a *App) WriteStdout(str string) {
+	fmt.Fprintln(os.Stdout, str)
+}
+func (a *App) WriteStderr(str string) {
+	fmt.Fprintln(os.Stderr, str)
+}
+
+func (a *App) GetFormConfig() form.FormConfigResponse {
+	if a.formCmd == nil {
+		return form.FormConfigResponse{}
+	}
+	return a.formCmd.GetFormConfig()
 }
 
 // startup is called at application startup

@@ -23,6 +23,9 @@ type CLI struct {
 type AppConfig struct {
 	CmdName      string
 	WindowConfig window.WindowOptions
+	FormCmd      *form.FormCmd
+	ListCmd      *list.ListCmd
+	AlertCmd     *alert.AlertCmd
 }
 
 func Parse() (*AppConfig, error) {
@@ -59,8 +62,8 @@ func Parse() (*AppConfig, error) {
 	appMode := appmode.GetAppModes()
 	var commandRegistry = map[string]argmethod.Method{
 		appMode.Form:  &cli.Form,
-		appMode.Alert: &cli.List,
-		appMode.List:  &cli.Alert,
+		appMode.Alert: &cli.Alert,
+		appMode.List:  &cli.List,
 	}
 	cmd, ok := commandRegistry[cmdName]
 	if !ok {
@@ -71,5 +74,8 @@ func Parse() (*AppConfig, error) {
 	return &AppConfig{
 		CmdName:      cmdName,
 		WindowConfig: windowConfig,
+		FormCmd:      &cli.Form,
+		AlertCmd:     &cli.Alert,
+		ListCmd:      &cli.List,
 	}, nil
 }

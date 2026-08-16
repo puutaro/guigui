@@ -3,8 +3,10 @@ package form
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/buttons"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
@@ -15,6 +17,10 @@ type FieldDef struct {
 	DefaultValue string   `json:"defaultValue"` // 初期値
 	Items        []string `json:"items"`        // CBやCBEの選択肢（item-separatorで分割したもの）
 }
+type ButtonDef struct {
+	Label    string `json:"label"`
+	ExitCode int    `json:"exitCode"`
+}
 
 type FormCmd struct {
 	ItemSeparator string   `name:"item-separator" default:"!" help:"Separator for list items"`
@@ -22,6 +28,7 @@ type FormCmd struct {
 	DateFormat    string   `name:"date-format" default:"%Y:%m:%d" help:"Date format"`
 	Fields        []string `name:"field" help:"Define fields in the form"`
 	window.WindowOptions
+	Buttons buttons.ButtonOptions `embed:""`
 }
 
 // KongのRun()からも接続できるようにする
@@ -39,21 +46,47 @@ func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 	}
 }
 
-// Wailsから呼び出される、あるいはフロントへバインドするメソッド
-func (cmd *FormCmd) GetFormConfig() map[string]any {
-	var parsedFields []FieldDef
+// レスポンス用の構造体を定義（これなら型安全！）
+type FormConfigResponse struct {
+	ItemSeparator string      `json:"itemSeparator"`
+	Separator     string      `json:"separator"`
+	Fields        []FieldDef  `json:"fields"`
+	Buttons       []ButtonDef `json:"buttons"`
+}
 
+func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
+	var parsedFields []FieldDef
 	for _, raw := range cmd.Fields {
-		// 例: "Combo Box(CB):CB=fox!bear!panda" のような文字列をパースする簡易ロジック
-		// ラベル:タイプ=初期値 の構造を分解
 		parsed := parseFieldString(raw, cmd.ItemSeparator)
 		parsedFields = append(parsedFields, parsed)
 	}
+	var parsedButtons []ButtonDef
+	for _, raw := range cmd.Buttons.Buttons {
+		parsed := parseButtonString(raw)
+		parsedButtons = append(parsedButtons, parsed)
+	}
 
-	return map[string]any{
-		"itemSeparator": cmd.ItemSeparator,
-		"separator":     cmd.Separator,
-		"fields":        parsedFields,
+	return FormConfigResponse{
+		ItemSeparator: cmd.ItemSeparator,
+		Separator:     cmd.Separator,
+		Fields:        parsedFields,
+		Buttons:       parsedButtons,
+	}
+}
+func parseButtonString(raw string) ButtonDef {
+	parts := strings.SplitN(raw, ":", 2)
+	label := parts[0]
+	exitCode := 0
+	if len(parts) > 1 {
+		val, err := strconv.Atoi(parts[1])
+		if err != nil {
+			val = 0
+		}
+		exitCode = val
+	}
+	return ButtonDef{
+		Label:    label,
+		ExitCode: exitCode,
 	}
 }
 

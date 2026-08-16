@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExitWith252 } from '../wailsjs/go/main/App';
-import { GetActiveMode } from '../wailsjs/go/main/App';
+import { ExitWith252, GetActiveMode } from '../wailsjs/go/main/App';
 
 export const VIEW_MODES = {
   LOADING: 'loading',
@@ -16,7 +15,6 @@ export function useEscClose() {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 ExitWith252()
-                window.go.main.App.ExitWith252();
             }
         };
 
