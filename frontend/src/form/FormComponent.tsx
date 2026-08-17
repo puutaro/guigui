@@ -1,7 +1,7 @@
 import { form } from '../../wailsjs/go/models';
 
 // 親から受け取るpropsの型定義
-export interface FormComponentProps {
+export type FormComponentProps = {
   formConfig: form.FormConfigResponse | null;
   formValues: Record<string, string>;
   setFieldValue: (key: string, value: string) => void;
@@ -10,14 +10,15 @@ export interface FormComponentProps {
   borderValue: number;
 }
 
-export function FormComponent({
+export const  FormComponent = ({
   formConfig,
   formValues,
   setFieldValue,
   handleButtonClick,
-  isAltPressed,
-  borderValue,
-}: FormComponentProps) {
+  isAltPressed ,
+   borderValue,
+  }: FormComponentProps
+) => {
     return (
         (
           <div id="form-view" className="flex flex-col h-[calc(100vh-4rem)]">
