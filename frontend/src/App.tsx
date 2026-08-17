@@ -41,27 +41,39 @@ function App() {
     });
 
     const isAltPressedRef = useRef(false);
+    const isCtrlPressedRef = useRef(false);
 
     // Altキーの押下状態を監視するイベントリスナー
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Alt') {
+        switch (e.key){
+        case 'Alt':
           isAltPressedRef.current = true;
           setIsAltPressed(true);
+          break;
+        case 'Ctrl':
+          isCtrlPressedRef.current = true;
+          break;
         }
       };
 
       const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.key === 'Alt') {
-          isAltPressedRef.current = true;
+        switch (e.key){
+        case 'Alt':
+          isAltPressedRef.current = false;
           setIsAltPressed(false);
+          break;
+        case 'Ctrl':
+          isCtrlPressedRef.current = false;
+          break;
         }
       };
 
       // ウィンドウのフォーカスが外れたときなどのためにAltキーの状態をリセット
       const handleBlur = () => {
-        isAltPressedRef.current = true;
+        isAltPressedRef.current = false;
         setIsAltPressed(false);
+        isCtrlPressedRef.current = false;
       };
 
       window.addEventListener('keydown', handleKeyDown);
@@ -136,7 +148,8 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
       const currentConfig = formConfigRef.current;
       if (!currentConfig?.buttons) return;
       // 除外すべきキーの判定を厳格化
-      if ((e.altKey || isAltPressedRef.current) && !['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key)) {
+      switch (true){
+      case ((e.altKey || isAltPressedRef.current) && !['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key)):{
         const pressedKey = e.key.toLowerCase();
         
         // 厳密にボタンの頭文字と一致するものがあるかチェック
@@ -153,6 +166,22 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
           }
           initHanelButtonClidk()
         }
+        break
+      }
+      case (e.ctrlKey && e.key == 'Enter'):{
+        let pressedKey = 'o';
+        const targetButton = currentConfig.buttons.find(btn => {
+        if (!btn.label || btn.label.length === 0) return false;
+          return btn.label.charAt(0).toLowerCase() === pressedKey;
+        });
+        if (targetButton) {
+          e.preventDefault();
+          const initHanelButtonClidk = async () =>{
+            await handleButtonClick(targetButton);
+          }
+          initHanelButtonClidk()
+        }
+      }
       }
     };
 

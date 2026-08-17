@@ -41,6 +41,7 @@ func (cmd *FormCmd) Run(ctx context.Context) error {
 func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 	return window.WindowOptions{
 		Title:  c.Title,
+		Center: c.Center,
 		Width:  c.Width,
 		Height: c.Height,
 		X:      c.X,

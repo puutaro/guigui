@@ -14,7 +14,8 @@ import (
 )
 
 type windowPositionConfig struct {
-	x, y *int
+	x, y   *int
+	center bool
 }
 
 type App struct {
@@ -32,11 +33,13 @@ func NewApp(appConfig *args.AppConfig) *App {
 	if mode == "" {
 		mode = appmode.GetAppModes().Form
 	}
+	windowConfig := appConfig.WindowConfig
 	return &App{
 		activeMode: mode,
 		windowPositionConfig: windowPositionConfig{
-			x: appConfig.WindowConfig.X,
-			y: appConfig.WindowConfig.Y,
+			x:      windowConfig.X,
+			y:      windowConfig.Y,
+			center: windowConfig.Center,
 		},
 		formCmd:  appConfig.FormCmd,
 		listCmd:  appConfig.ListCmd,
@@ -75,9 +78,14 @@ func (a *App) startup(ctx context.Context) {
 	// Perform your setup here
 	a.ctx = ctx
 	windowPositionConfig := a.windowPositionConfig
+	isCenter := windowPositionConfig.center
 	x := windowPositionConfig.x
 	y := windowPositionConfig.y
-	if x != nil && y != nil {
+	switch true {
+	case isCenter:
+		fmt.Println(isCenter)
+		runtime.WindowCenter(a.ctx)
+	case x != nil && y != nil:
 		runtime.WindowSetPosition(a.ctx, *x, *y)
 	}
 }

@@ -9,4 +9,5 @@ type WindowOptions struct {
 	Height   int    `name:"height" default:"768" help:"Window height"`
 	X        *int   `name:"x" help:"Window X position"`
 	Y        *int   `name:"y" help:"Window Y position"`
+	Center   bool   `name:"center" help:"Window center position"`
 }
