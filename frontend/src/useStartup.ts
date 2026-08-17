@@ -27,7 +27,6 @@ export function useEscClose() {
 
 export function useLoadConfig() {
   const [viewType, setViewType] = useState<ViewType>(VIEW_MODES.LOADING);
-  const [configData, setConfigData] = useState<any>(null); // 必要ならデータ保持
 
   useEffect(() => {
     async function loadConfig() {
@@ -40,5 +39,5 @@ export function useLoadConfig() {
     }
     loadConfig();
   }, []);
-  return { viewType, setViewType, configData, setConfigData };
+  return { viewType, setViewType };
 }

@@ -83,7 +83,6 @@ func (a *App) startup(ctx context.Context) {
 	y := windowPositionConfig.y
 	switch true {
 	case isCenter:
-		fmt.Println(isCenter)
 		runtime.WindowCenter(a.ctx)
 	case x != nil && y != nil:
 		runtime.WindowSetPosition(a.ctx, *x, *y)
