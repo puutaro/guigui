@@ -3,6 +3,7 @@ package args
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/alecthomas/kong"
@@ -57,7 +58,9 @@ func Parse() (*AppConfig, error) {
 			return nil, err
 		}
 	} else {
-		cmdName = ctx.Command()
+		parts := strings.Fields(ctx.Command())
+		cmdName = parts[0] // これで "form" が取れる
+		// cmdName = ctx.Command()
 	}
 	appMode := appmode.GetAppModes()
 	var commandRegistry = map[string]argmethod.Method{

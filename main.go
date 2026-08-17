@@ -9,6 +9,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 const (
@@ -35,7 +36,10 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "wails-events",
+		Title: windowConfig.Title,
+		Windows: &windows.Options{
+			DisableWindowIcon: true,
+		},
 		Width:  windowConfig.Width,
 		Height: windowConfig.Height,
 		AssetServer: &assetserver.Options{

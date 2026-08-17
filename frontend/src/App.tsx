@@ -1,10 +1,10 @@
 import wailsLogo from './assets/wails.png'
 import './App.css'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
 import { useUndoRedo} from './form/hooks/useAndoRedo';
 import { useKeyboardShortcut} from './form/hooks/useFormKeyShortcut';
-import { WriteStdout, GetFormConfig, ExitWithNumber } from '../wailsjs/go/main/App';
+import { WriteStdout, GetFormConfig, ExitWithNumber, WriteStderr } from '../wailsjs/go/main/App';
 import { form } from '../wailsjs/go/models'
 
 const VALID_MODES = ['form', 'list', 'alert'] as const;
@@ -14,8 +14,11 @@ function App() {
     useEscClose()
     const { viewType, setViewType,  configData, setConfigData } = useLoadConfig();
     
+    // Altキーが押されているかどうかを管理するステート
+    const [isAltPressed, setIsAltPressed] = useState(false);
+    
     // 1. undo/redo フックでフォーム全体の値を管理（初期値は空のオブジェクト）
-    const { 
+    const {  
       state: formValues, 
       set: setFormValues, 
       setFieldValue, 
@@ -37,6 +40,128 @@ function App() {
       },
     });
 
+    const isAltPressedRef = useRef(false);
+
+    // Altキーの押下状態を監視するイベントリスナー
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Alt') {
+          isAltPressedRef.current = true;
+          setIsAltPressed(true);
+        }
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Alt') {
+          isAltPressedRef.current = true;
+          setIsAltPressed(false);
+        }
+      };
+
+      // ウィンドウのフォーカスが外れたときなどのためにAltキーの状態をリセット
+      const handleBlur = () => {
+        isAltPressedRef.current = true;
+        setIsAltPressed(false);
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      window.addEventListener('blur', handleBlur);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        window.removeEventListener('blur', handleBlur);
+      };
+    }, []);
+  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  const isExecutingRef = useRef(false);
+    // ボタンのアクションを実行する共通関数
+const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
+    if (isExecutingRef.current) {
+      return;
+    }
+    isExecutingRef.current = true;
+    if (btn.exitCode == 1){
+      await ExitWithNumber(btn.exitCode);
+    }
+    
+    let currentConfig = formConfigRef.current;
+    let fields = currentConfig?.fields || [];
+    let retries = 0;
+    while (fields.length === 0 && retries < 5) {
+      await sleep(10);
+      console.log(`retry :${retries}`)
+      currentConfig = formConfigRef.current;
+      fields = currentConfig?.fields || [];
+      retries++;
+    }
+    const separator = currentConfig?.separator || "!";
+    // ★ ステートではなく、常に最新を保持している ref から値を取得する
+    const currentValues = formValuesRef.current;
+    const outputString = fields
+      .map((field, index) => {
+        try {
+          const key = `${index}_${field.label}`;
+          const rawValue = currentValues[key] ?? field.defaultValue ?? "";
+          console.log(`condole ${key}, ${rawValue}`);
+          switch (field.type) {
+            case 'NUM':
+              return rawValue.toString().split('!')[0];
+          } 
+          return rawValue;
+        } catch (err: any) {
+          // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
+          console.log(`Exception at index ${index}: ${err?.message || err}`);
+          return "";
+        }
+      })
+      .join(separator);
+      
+    await WriteStdout(outputString ?? "");
+    await ExitWithNumber(btn.exitCode);
+  };
+
+    const formConfigRef = useRef(formConfig);
+    const formValuesRef = useRef(formValues);
+
+    useEffect(() => {
+      formConfigRef.current = formConfig;
+      formValuesRef.current = formValues;
+    }, [formConfig, formValues]);
+    // Alt + 頭文字キーによるショートカット処理
+    useEffect(() => {
+    const handleShortcut = (e: KeyboardEvent) => {
+      const currentConfig = formConfigRef.current;
+      if (!currentConfig?.buttons) return;
+      // 除外すべきキーの判定を厳格化
+      if ((e.altKey || isAltPressedRef.current) && !['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key)) {
+        const pressedKey = e.key.toLowerCase();
+        
+        // 厳密にボタンの頭文字と一致するものがあるかチェック
+        const targetButton = currentConfig.buttons.find(btn => {
+          if (!btn.label || btn.label.length === 0) return false;
+          return btn.label.charAt(0).toLowerCase() === pressedKey;
+        });
+
+        // 完全に一致するボタンが存在する場合のみ、イベントを止めて実行する
+        if (targetButton) {
+          e.preventDefault();
+          const initHanelButtonClidk = async () =>{
+            await handleButtonClick(targetButton);
+          }
+          initHanelButtonClidk()
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleShortcut);
+    return () => {
+      window.removeEventListener('keydown', handleShortcut);
+    };
+  }, []);
+
     // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
         if (viewType === VIEW_MODES.FORM) {
@@ -52,7 +177,7 @@ function App() {
                     });
                     setFormValues(initialValues);
 
-                    alert("res の内容: " + JSON.stringify(res, null, 2));
+                    // alert("res の内容: " + JSON.stringify(res, null, 2));
                 })
                 .catch((err) => {
                     console.error("Failed to load form config:", err);
@@ -63,37 +188,67 @@ function App() {
     if (viewType === VIEW_MODES.LOADING) {
       return <div className="p-8 text-center">Loading...</div>;
     }
+    const borderValue = formConfig?.borders ?? 0;
+    const fontSizeInt = formConfig?.fontSize ? formConfig.fontSize : 10;
+    const fontSizeValue = `${fontSizeInt}px`;
+    const labelFontSizeValue = `${(fontSizeInt * 3) / 4}px`;
 
   return (
-    <div className="min-h-screen bg-white p-8 font-mono">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-white p-8 font-mono" 
+      style={{ fontSize: fontSizeValue }}
+    >
+      
+      <div >
+      {/* <div className="max-w-md mx-auto"> */}
         {viewType === VIEW_MODES.FORM && (
-          <div id="form-view">
-            <h1 className="text-2xl font-bold text-blue-900 mb-4">Form Dialog</h1>
+          <div id="form-view" className="flex flex-col h-[calc(100vh-4rem)]">
+            <h1 className="text-2xl font-bold text-blue-900 mb-4 flex-shrink-0">
+              {formConfig?.text ?? ""}
+            </h1>
           {!formConfig ? (
-              <div className="text-gray-500">Loading form config...</div>
+              <div className="text-gray-500">Loading form...</div>
             ) : (
-              <div className="space-y-4">
+            <div 
+              className="flex flex-col h-full overflow-hidden"
+              style={{ padding: `${borderValue}px` }}
+            >
+              {/* --- 1. スクロール可能なフィールド領域 --- */}
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                 {formConfig.fields.map((field, index) => {
                   const key = `${index}_${field.label}`;
                   return (
-                    <div key={index} className="flex flex-col">
-                      <label className="font-bold text-sm mb-1">{field.label}</label>
+                    <div 
+                      key={index} 
+                      className="flex flex-col"
+                      style={{ paddingBottom: `${borderValue}px` }}
+                    >
+                      {/* (フィールドの描画ロジックはそのまま) */}
+                      <label 
+                        className="font-bold mb-1"
+                        style={{ 
+                          fontSize: labelFontSizeValue,
+                          padding: `${borderValue}px` 
+                        }}
+                      >
+                        {field.label}
+                      </label>
                       
                       {field.type === 'TXT' && (
                         <input 
                           type="text" 
                           value={formValues[key] ?? field.defaultValue ?? ""} 
-                          onChange={(e) => setFieldValue(key, e.target.value)} // <-- 個別フィールドの変更とUndo/Redoを紐付け
-                          className="border p-2 rounded" 
+                          onChange={(e) => setFieldValue(key, e.target.value)}
+                          className="border rounded" 
+                          style={{ padding: `${borderValue}px` }}
                         />
                       )}
                       
                       {field.type === 'CB' && (
                         <select 
                           value={formValues[key] ?? field.defaultValue ?? ""}
-                          onChange={(e) => setFieldValue(key, e.target.value)} // <-- セレクトボックスも同様
-                          className="border p-2 rounded"
+                          onChange={(e) => setFieldValue(key, e.target.value)}
+                          className="border rounded"
+                          style={{ padding: `${borderValue}px` }}
                         >
                           {field.items?.map((item) => (
                             <option key={item} value={item}>{item}</option>
@@ -104,102 +259,113 @@ function App() {
                         <button
                           type="button"
                           onClick={() => {
-                            // yadの btn:FBTN="echo aa" などを想定したアクションのプレースホルダー
                             console.log("FBTN clicked, command:", field.defaultValue);
                           }}
-                          className="border p-2 rounded bg-gray-100 hover:bg-gray-200 text-left active:bg-gray-300"
+                          className="border rounded bg-gray-100 hover:bg-gray-200 text-left active:bg-gray-300"
+                          style={{ padding: `${borderValue}px` }}
                         >
                           FBTN
                         </button>
                       )}
                       {field.type === 'LBL' && (
-                        <span className="text-gray-600">{field.defaultValue}</span>
+                        <span 
+                          className="text-gray-600 block"
+                          style={{ padding: `${borderValue}px` }}
+                        >
+                          {field.defaultValue}
+                        </span>
                       )}
-                    {field.type === 'NUM' && (() => {
-                        const parts = (field.defaultValue || "").split('!');
-                        const defaultVal = parts[0] ? parseFloat(parts[0]) : 0;
-                        const rangePart = parts[1] || "";
-                        const stepVal = parts[2] ? parseFloat(parts[2]) : 1;
-                        const decimals = parts[2] && parts[2].includes('.') ? parts[2].split('.')[1].length : 0;
+                      {field.type === 'NUM' && (() => {
+                          const parts = (field.defaultValue || "").split('!');
+                          const defaultVal = parts[0] ? parseFloat(parts[0]) : 0;
+                          const rangePart = parts[1] || "";
+                          const stepVal = parts[2] ? parseFloat(parts[2]) : 1;
+                          const decimals = parts[2] && parts[2].includes('.') ? parts[2].split('.')[1].length : 0;
 
-                        const [minStr, maxStr] = rangePart.split('..');
-                        const minVal = minStr ? parseFloat(minStr) : undefined;
-                        const maxVal = maxStr ? parseFloat(maxStr) : undefined;
+                          const [minStr, maxStr] = rangePart.split('..');
+                          const minVal = minStr ? parseFloat(minStr) : undefined;
+                          const maxVal = maxStr ? parseFloat(maxStr) : undefined;
 
-                        const currentValue = formValues[key] !== undefined ? formValues[key].split('!')[0] : defaultVal;
+                          const currentValue = formValues[key] !== undefined ? formValues[key].split('!')[0] : defaultVal;
 
-                        const handleStep = (direction: number) => {
-                          const currentNum = parseFloat(currentValue.toString()) || 0;
-                          let nextNum = currentNum + direction * stepVal;
-                          
-                          if (minVal !== undefined && nextNum < minVal) nextNum = minVal;
-                          if (maxVal !== undefined && nextNum > maxVal) nextNum = maxVal;
+                          const handleStep = (direction: number) => {
+                            const currentNum = parseFloat(currentValue.toString()) || 0;
+                            let nextNum = currentNum + direction * stepVal;
+                            
+                            if (minVal !== undefined && nextNum < minVal) nextNum = minVal;
+                            if (maxVal !== undefined && nextNum > maxVal) nextNum = maxVal;
 
-                          setFieldValue(key, nextNum.toFixed(decimals));
-                        };
+                            setFieldValue(key, nextNum.toFixed(decimals));
+                          };
 
-                        return (
-                          <div className="flex items-center">
-                            <input 
-                              type="number"
-                              step={stepVal}
-                              min={minVal}
-                              max={maxVal}
-                              value={currentValue}
-                              onChange={(e) => setFieldValue(key, e.target.value)}
-                              className="border p-2 rounded-l rounded-r-none flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-right"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleStep(-1)}
-                              className="border-t border-b border-r bg-gray-100 hover:bg-gray-200 px-3 py-2 text-sm active:bg-gray-300"
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleStep(1)}
-                              className="border-t border-b border-r rounded-r bg-gray-100 hover:bg-gray-200 px-3 py-2 text-sm active:bg-gray-300"
-                            >
-                              +
-                            </button>
-                          </div>
-                        );
+                          return (
+                            <div className="flex items-center">
+                              <input 
+                                type="number"
+                                step={stepVal}
+                                min={minVal}
+                                max={maxVal}
+                                value={currentValue}
+                                onChange={(e) => setFieldValue(key, e.target.value)}
+                                className="border rounded-l rounded-r-none flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-right"
+                                style={{ padding: `${borderValue}px` }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleStep(-1)}
+                                className="border-t border-b border-r bg-gray-100 hover:bg-gray-200 text-sm active:bg-gray-300"
+                                style={{ padding: `${borderValue}px` }}
+                              >
+                                -
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStep(1)}
+                                className="border-t border-b border-r rounded-r bg-gray-100 hover:bg-gray-200 text-sm active:bg-gray-300"
+                                style={{ padding: `${borderValue}px` }}
+                              >
+                                +
+                              </button>
+                            </div>
+                          );
                       })()}
                     </div>
                   );
                 })}
-                <div className="flex justify-end space-x-2 pt-4 border-t mt-auto">
-                  {formConfig.buttons?.map((btn, idx) => (
+              </div>
+
+              {/* --- 2. ウィンドウ最下部に固定されるボタン領域 --- */}
+              <div className="flex justify-end space-x-2 pt-4 border-t mt-2 flex-shrink-0 bg-white">
+                {formConfig.buttons?.map((btn, idx) => {
+                  const label = btn.label || "";
+                  const firstChar = label.charAt(0);
+                  const restChars = label.slice(1);
+
+                  return (
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => {
-                        // 各フィールドの値を formConfig.itemSeparator で結合する文字列を作成
-                        const separator = formConfig.separator || "!";
-                        const outputString = formConfig.fields
-                          .map((field, index) => {
-                            const key = `${index}_${field.label}`;
-                            const rawValue = formValues[key] ?? field.defaultValue ?? "";
-                            // NUMフィールドの場合は '!' で分割して最初の値（現在の数値）だけを使用する
-                            switch (field.type) {
-                              case 'NUM':
-                                return rawValue.toString().split('!')[0];
-                            } 
-                            return rawValue;
-                          })
-                          .join(separator);
-                        WriteStdout(outputString);
-                        ExitWithNumber(btn.exitCode);
+                      onClick={() => handleButtonClick(btn)}
+                      className="border rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-sm shadow-sm"
+                      style={{ 
+                          padding: `${borderValue}px`, 
+                          fontSize: fontSizeValue,
                       }}
-                      className="border px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-sm shadow-sm"
                     >
-                      {btn.label}
+                      {isAltPressed && firstChar ? (
+                        <>
+                          <span className="underline">{firstChar}</span>
+                          {restChars}
+                        </>
+                      ) : (
+                        label
+                      )}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
+          )}
           </div>
         )}
 

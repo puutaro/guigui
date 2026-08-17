@@ -27,6 +27,7 @@ type FormCmd struct {
 	Separator     string   `name:"separator" default:"|" help:"Separator for output values"`
 	DateFormat    string   `name:"date-format" default:"%Y:%m:%d" help:"Date format"`
 	Fields        []string `name:"field" help:"Define fields in the form"`
+	FieldValues   []string `arg:"" optional:"" name:"fieldValues" help:"field values"`
 	window.WindowOptions
 	Buttons buttons.ButtonOptions `embed:""`
 }
@@ -39,6 +40,7 @@ func (cmd *FormCmd) Run(ctx context.Context) error {
 }
 func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 	return window.WindowOptions{
+		Title:  c.Title,
 		Width:  c.Width,
 		Height: c.Height,
 		X:      c.X,
@@ -48,6 +50,9 @@ func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 
 // レスポンス用の構造体を定義（これなら型安全！）
 type FormConfigResponse struct {
+	Text          string      `json:"text"`
+	Borders       int         `json:"borders"`
+	FontSize      int         `json:"fontSize"`
 	ItemSeparator string      `json:"itemSeparator"`
 	Separator     string      `json:"separator"`
 	Fields        []FieldDef  `json:"fields"`
@@ -56,8 +61,13 @@ type FormConfigResponse struct {
 
 func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 	var parsedFields []FieldDef
-	for _, raw := range cmd.Fields {
-		parsed := parseFieldString(raw, cmd.ItemSeparator)
+	for index, raw := range cmd.Fields {
+		fieldValues := cmd.FieldValues
+		fValue := ""
+		if index < len(fieldValues) {
+			fValue = fieldValues[index]
+		}
+		parsed := parseFieldString(raw, fValue, cmd.ItemSeparator)
 		parsedFields = append(parsedFields, parsed)
 	}
 	var parsedButtons []ButtonDef
@@ -67,6 +77,9 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 	}
 
 	return FormConfigResponse{
+		Text:          cmd.Text,
+		Borders:       cmd.Borders,
+		FontSize:      cmd.FontSize,
 		ItemSeparator: cmd.ItemSeparator,
 		Separator:     cmd.Separator,
 		Fields:        parsedFields,
@@ -91,15 +104,9 @@ func parseButtonString(raw string) ButtonDef {
 }
 
 // 文字列パースのヘルパー（簡易版）
-func parseFieldString(raw, itemSep string) FieldDef {
+func parseFieldString(raw, fValue, itemSep string) FieldDef {
 	// 実際には yad の書式（--field="ラベル:タイプ" 初期値 のようなスペース区切りやイコール区切り）に合わせて堅牢にパースします
-	parts := strings.SplitN(raw, "=", 2)
-	left := parts[0] // 例: "Combo Box(CB):CB" または "Simple Text(no type"
-	val := ""
-	if len(parts) > 1 {
-		val = parts[1]
-	}
-
+	left := strings.Split(raw, "=")[0]
 	labelType := strings.Split(left, ":")
 	label := labelType[0]
 	fType := "TXT" // デフォルト
@@ -109,13 +116,13 @@ func parseFieldString(raw, itemSep string) FieldDef {
 
 	var items []string
 	if fType == "CB" || fType == "CBE" {
-		items = strings.Split(val, itemSep)
+		items = strings.Split(fValue, itemSep)
 	}
 
 	return FieldDef{
 		Label:        label,
 		Type:         fType,
-		DefaultValue: val,
+		DefaultValue: fValue,
 		Items:        items,
 	}
 }

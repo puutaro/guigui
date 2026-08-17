@@ -60,7 +60,7 @@ func (a *App) WriteStdout(str string) {
 	fmt.Fprintln(os.Stdout, str)
 }
 func (a *App) WriteStderr(str string) {
-	fmt.Fprintln(os.Stderr, str)
+	fmt.Fprintf(os.Stderr, "\x1b[31m%s\x1b[0m\n", str)
 }
 
 func (a *App) GetFormConfig() form.FormConfigResponse {
