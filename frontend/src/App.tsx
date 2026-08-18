@@ -112,17 +112,17 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
     const separator = currentConfig?.separator || "!";
     // ★ ステートではなく、常に最新を保持している ref から値を取得する
     const currentValues = formValuesRef.current;
-    const noReturnValueEditors = ['BTN', 'FBTN' ];
-    const noValueSignal = "NoVloEreSgIGaL"
+    // const noReturnValueEditors = ['BTN', 'FBTN' ];
+    // const noValueSignal = "NoVloEreSgIGaL"
     // let outputList: Array<string> = [];
     const outputString = fields
       .map((field, index) => {
         try {
           const label = field.label;
-          const fieldType = field.type;
-          if (noReturnValueEditors.includes(fieldType)){
-            return noValueSignal
-          }
+          // const fieldType = field.type;
+          // if (noReturnValueEditors.includes(fieldType)){
+          //   return noValueSignal
+          // }
           const key = `${index}_${label}`;
           const rawValue = currentValues[key] ?? field.defaultValue ?? "";
           console.log(`condole ${key}, ${rawValue}`);
@@ -132,12 +132,13 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
           console.log(`Exception at index ${index}: ${err?.message || err}`);
           return "";
         }
-      }).filter((el) =>{
-        if(el === noValueSignal) {
-          return false
-        }
-        return true
       })
+      // .filter((el) =>{
+      //   if(el === noValueSignal) {
+      //     return false
+      //   }
+      //   return true
+      // })
       .join(separator);
     // await WriteStdout(outputList.join("===")) 
     await WriteStdout(outputString);

@@ -25,13 +25,13 @@ type ButtonDef struct {
 }
 
 type FormCmd struct {
-	ItemSeparator string   `name:"item-separator" default:"!" help:"Separator for list items"`
-	Separator     string   `name:"separator" default:"|" help:"Separator for output values"`
-	DateFormat    string   `name:"date-format" default:"%Y:%m:%d" help:"Date format"`
-	Fields        []string `name:"field" help:"Define fields in the form"`
-	FieldValues   []string `arg:"" optional:"" name:"fieldValues" help:"field values"`
+	ItemSeparator string   `arg:"--item-separator" default:"!" help:"Separator for list items"`
+	Separator     string   `arg:"--separator" default:"|" help:"Separator for output values"`
+	DateFormat    string   `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
+	Fields        []string `arg:"--field,separate" help:"Define fields in the form"`
+	FieldValues   []string `arg:"positional,separate,required" help:"field values"`
 	window.WindowOptions
-	Buttons buttons.ButtonOptions `embed:""`
+	buttons.ButtonOptions
 }
 
 // KongのRun()からも接続できるようにする
@@ -74,7 +74,7 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		parsedFields = append(parsedFields, parsed)
 	}
 	var parsedButtons []ButtonDef
-	for _, raw := range cmd.Buttons.Buttons {
+	for _, raw := range cmd.Buttons {
 		parsed := parseButtonString(raw)
 		parsedButtons = append(parsedButtons, parsed)
 	}

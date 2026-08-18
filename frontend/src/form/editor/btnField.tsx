@@ -3,13 +3,18 @@ import { RunCmd } from '../../../wailsjs/go/main/App';
 
 export type BtnFieldProps = {
   field: form.FieldDef,
+  fieldKey: string, 
+  setFieldValue: (key: string, value: string) => void;
   borderValue: number;
 }
 
 export const BtnField = ({ 
   field, 
+  fieldKey ,
+  setFieldValue,
   borderValue 
 }: BtnFieldProps) => {
+  setFieldValue(fieldKey, field.defaultValue)
   return (
     <button
       type="button"

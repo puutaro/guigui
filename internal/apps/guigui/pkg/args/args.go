@@ -1,25 +1,19 @@
 package args
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/BurntSushi/toml"
-	"github.com/alecthomas/kong"
+	"github.com/alexflint/go-arg"
+
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/argmethod"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 )
 
 type CLI struct {
-	Version kong.VersionFlag `name:"version" help:"Print version information."`
-	Form    form.FormCmd     `cmd:"form" help:"Launch a form dialog"`
-	List    list.ListCmd     `cmd:"list" help:"Launch a list dialog"`
-	Alert   alert.AlertCmd   `cmd:"alert" help:"Launch an alert dialog"`
+	Form  *form.FormCmd   `arg:"subcommand:form" help:"Launch a form dialog"`
+	List  *list.ListCmd   `arg:"subcommand:list" help:"Launch a list dialog"`
+	Alert *alert.AlertCmd `arg:"subcommand:alert" help:"Launch an alert dialog"`
 }
 type AppConfig struct {
 	CmdName      string
@@ -29,56 +23,38 @@ type AppConfig struct {
 	AlertCmd     *alert.AlertCmd
 }
 
-func Parse() (*AppConfig, error) {
+func (CLI) Version() string {
 	var info GuiGuiInfo
 	if _, err := toml.Decode(string(GuiGuiInfoRaw), &info); err != nil {
-		return nil, fmt.Errorf("failed to parse toml: %v", err)
+		return ""
 	}
+	return info.GuiGui.Version
+}
 
-	var cli CLI
-	parser, err := kong.New(&cli,
-		kong.Name(info.GuiGui.Name),
-		kong.Description(info.GuiGui.Description),
-		kong.Vars{
-			"version": info.GuiGui.Version,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+func Parse() (*AppConfig, error) {
 
-	argsToParse := os.Args[1:]
-	ctx, err := parser.Parse(argsToParse)
-
-	var cmdName string
-	if err != nil {
-		if len(argsToParse) == 0 {
-			cmdName = appmode.GetAppModes().Form
-		} else {
-			return nil, err
-		}
-	} else {
-		parts := strings.Fields(ctx.Command())
-		cmdName = parts[0] // これで "form" が取れる
-		// cmdName = ctx.Command()
-	}
-	appMode := appmode.GetAppModes()
-	var commandRegistry = map[string]argmethod.Method{
-		appMode.Form:  &cli.Form,
-		appMode.Alert: &cli.Alert,
-		appMode.List:  &cli.List,
-	}
-	cmd, ok := commandRegistry[cmdName]
-	if !ok {
-		return nil, fmt.Errorf("cmd not found: %s", cmdName)
-	}
+	var args CLI
+	arg.MustParse(&args)
+	cmdName := "form"
 	var windowConfig window.WindowOptions
-	windowConfig = cmd.GetWindowConfig()
+	formCmd := args.Form
+	listCmd := args.List
+	alertCmd := args.Alert
+	switch {
+	case formCmd != nil:
+		windowConfig = formCmd.WindowOptions
+	case listCmd != nil:
+		windowConfig = listCmd.WindowOptions
+		cmdName = "list"
+	case alertCmd != nil:
+		windowConfig = alertCmd.WindowOptions
+		cmdName = "alert"
+	}
 	return &AppConfig{
 		CmdName:      cmdName,
 		WindowConfig: windowConfig,
-		FormCmd:      &cli.Form,
-		AlertCmd:     &cli.Alert,
-		ListCmd:      &cli.List,
+		FormCmd:      args.Form,
+		AlertCmd:     args.Alert,
+		ListCmd:      args.List,
 	}, nil
 }

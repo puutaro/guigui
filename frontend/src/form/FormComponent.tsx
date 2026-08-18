@@ -92,6 +92,8 @@ export const  FormComponent = ({
                       {(btnList  as readonly string[]).includes(field.type) && (
                         <BtnField 
                           field={field}
+                          fieldKey={key}
+                          setFieldValue={setFieldValue}
                           borderValue={borderValue}
                          />
                       )}
