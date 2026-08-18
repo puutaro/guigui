@@ -112,26 +112,35 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
     const separator = currentConfig?.separator || "!";
     // ★ ステートではなく、常に最新を保持している ref から値を取得する
     const currentValues = formValuesRef.current;
+    const noReturnValueEditors = ['BTN', 'FBTN' ];
+    const noValueSignal = "NoVloEreSgIGaL"
+    // let outputList: Array<string> = [];
     const outputString = fields
       .map((field, index) => {
         try {
-          const key = `${index}_${field.label}`;
+          const label = field.label;
+          const fieldType = field.type;
+          if (noReturnValueEditors.includes(fieldType)){
+            return noValueSignal
+          }
+          const key = `${index}_${label}`;
           const rawValue = currentValues[key] ?? field.defaultValue ?? "";
           console.log(`condole ${key}, ${rawValue}`);
-          switch (field.type) {
-            case 'NUM':
-              return rawValue.toString().split('!')[0];
-          } 
           return rawValue;
         } catch (err: any) {
           // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
           console.log(`Exception at index ${index}: ${err?.message || err}`);
           return "";
         }
+      }).filter((el) =>{
+        if(el === noValueSignal) {
+          return false
+        }
+        return true
       })
       .join(separator);
-      
-    await WriteStdout(outputString ?? "");
+    // await WriteStdout(outputList.join("===")) 
+    await WriteStdout(outputString);
     await ExitWithNumber(btn.exitCode);
   };
 

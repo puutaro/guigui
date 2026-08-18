@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/buttons"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
@@ -16,6 +17,7 @@ type FieldDef struct {
 	Type         string   `json:"type"`         // CB, TXT, LBL など
 	DefaultValue string   `json:"defaultValue"` // 初期値
 	Items        []string `json:"items"`        // CBやCBEの選択肢（item-separatorで分割したもの）
+	SrcValue     string   `json:"srcValue"`     // gen src value in frontend: ex NUM
 }
 type ButtonDef struct {
 	Label    string `json:"label"`
@@ -78,7 +80,7 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 	}
 
 	return FormConfigResponse{
-		Text:          cmd.Text,
+		Text:          cmd.TextUnescapeNewlines(),
 		Borders:       cmd.Borders,
 		FontSize:      cmd.FontSize,
 		ItemSeparator: cmd.ItemSeparator,
@@ -89,7 +91,9 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 }
 func parseButtonString(raw string) ButtonDef {
 	parts := strings.SplitN(raw, ":", 2)
-	label := parts[0]
+	// yad comp gtk-ok etc.. button
+	label, _ := strings.CutPrefix(parts[0], "gtk-")
+	labelWithCapi := capitalizeFirst(label)
 	exitCode := 0
 	if len(parts) > 1 {
 		val, err := strconv.Atoi(parts[1])
@@ -99,31 +103,82 @@ func parseButtonString(raw string) ButtonDef {
 		exitCode = val
 	}
 	return ButtonDef{
-		Label:    label,
+		Label:    labelWithCapi,
 		ExitCode: exitCode,
 	}
+}
+
+func capitalizeFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	// 文字列をルーン（Unicode文字）の配列に変換する（マルチバイト文字対応のため）
+	runes := []rune(s)
+	// 先頭の文字を大文字にする
+	runes[0] = unicode.ToUpper(runes[0])
+	// 再び文字列に戻す
+	return string(runes)
 }
 
 // 文字列パースのヘルパー（簡易版）
 func parseFieldString(raw, fValue, itemSep string) FieldDef {
 	// 実際には yad の書式（--field="ラベル:タイプ" 初期値 のようなスペース区切りやイコール区切り）に合わせて堅牢にパースします
-	left := strings.Split(raw, "=")[0]
-	labelType := strings.Split(left, ":")
+	labelType := strings.Split(raw, ":")
 	label := labelType[0]
 	fType := "TXT" // デフォルト
 	if len(labelType) > 1 {
 		fType = labelType[1]
 	}
-
+	var srcValue string
 	var items []string
-	if fType == "CB" || fType == "CBE" {
-		items = strings.Split(fValue, itemSep)
+	defaultValue := fValue
+	switch true {
+	case
+		fType == "CB" ||
+			fType == "CBE":
+		items, defaultValue = makeItemsAndDefaultValueForCB(
+			fValue,
+			itemSep,
+		)
+	case fType == "NUM":
+		defaultValue, _, _ = strings.Cut(fValue, "!")
+		srcValue = fValue
 	}
 
 	return FieldDef{
 		Label:        label,
 		Type:         fType,
-		DefaultValue: fValue,
+		DefaultValue: defaultValue,
 		Items:        items,
+		SrcValue:     srcValue,
 	}
+}
+
+func makeItemsAndDefaultValueForCB(
+	fValue string,
+	itemSep string,
+) ([]string, string) {
+	defaultPrefixSignal := "^"
+	items := strings.Split(
+		strings.ReplaceAll(
+			fValue,
+			defaultPrefixSignal,
+			"",
+		),
+		itemSep,
+	)
+	rowItems := strings.Split(fValue, itemSep)
+	defaultValue := items[0]
+	for _, ritem := range rowItems {
+		if !strings.HasPrefix(ritem, defaultPrefixSignal) {
+			continue
+		}
+		defaultValue = strings.ReplaceAll(
+			ritem,
+			defaultPrefixSignal,
+			"",
+		)
+		break
+	}
+	return items, defaultValue
 }

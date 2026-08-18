@@ -42,7 +42,7 @@ export const  FormComponent = ({
                 {formConfig.fields.map((field, index) => {
                   const key = `${index}_${field.label}`;
                   let labelDisplayValue = 'inline';
-                  const btnList = ['BTN', 'FBTN', 'LBL'] as const
+                  const btnList = ['BTN', 'FBTN'] as const
                   switch (true) {
                   case (btnList  as readonly string[]).includes(field.type):{
                     labelDisplayValue = 'none';

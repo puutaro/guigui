@@ -14,8 +14,8 @@ export const NumEditField = ({
   setFieldValue, 
   borderValue 
 }: NumSelectFieldProps) => {
-  const parts = (field.defaultValue || "").split('!');
-  const defaultVal = parts[0] ? parseFloat(parts[0]) : 0;
+  const numSeparator = '!';
+  const parts = (field.srcValue || "").split(numSeparator);
   const rangePart = parts[1] || "";
   const stepVal = parts[2] ? parseFloat(parts[2]) : 1;
   const decimals = parts[2] && parts[2].includes('.') ? parts[2].split('.')[1].length : 0;
@@ -24,7 +24,8 @@ export const NumEditField = ({
   const minVal = minStr ? parseFloat(minStr) : undefined;
   const maxVal = maxStr ? parseFloat(maxStr) : undefined;
 
-  const currentValue = formValues[fieldKey] !== undefined ? formValues[fieldKey].split('!')[0] : defaultVal;
+  const curValueEntry = formValues[fieldKey]
+  const currentValue = curValueEntry !== undefined ? curValueEntry.split(numSeparator)[0] : field.defaultValue;
 
   const handleStep = (direction: number) => {
     const currentNum = parseFloat(currentValue.toString()) || 0;
