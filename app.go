@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
@@ -71,6 +72,30 @@ func (a *App) GetFormConfig() form.FormConfigResponse {
 		return form.FormConfigResponse{}
 	}
 	return a.formCmd.GetFormConfig()
+}
+
+func (a *App) SelectFile(title string) (string, error) {
+	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: title,
+	})
+	return filePath, err
+}
+func (a *App) SelectDir(title string) (string, error) {
+	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: title,
+	})
+	return dirPath, err
+}
+func (a *App) RunCmd(cmdStr string) error {
+	cmd := exec.Command("bash", "-c", cmdStr)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	// コマンドを実行
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("command failed: %v", err)
+	}
+	return nil
 }
 
 // startup is called at application startup
