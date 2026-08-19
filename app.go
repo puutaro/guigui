@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
@@ -102,6 +104,42 @@ func (a *App) RunCmd(cmdStr string) error {
 		return fmt.Errorf("command failed: %v", err)
 	}
 	return nil
+}
+
+func (a *App) RunReloadCmdForList(cmdStr, line, delimiter string) (string, error) {
+	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
+	cmd := exec.Command("bash", "-c", replacedCmdStr)
+	cmd.Stderr = os.Stderr
+	var stdoutBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("command failed: %w", err)
+	}
+	return strings.TrimSuffix(stdoutBuf.String(), "\n"), nil
+}
+func (a *App) RunlCmdForList(cmdStr, line, delimiter string) error {
+	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
+	return a.RunCmd(replacedCmdStr)
+}
+
+func (a *App) replaceHolder(cmdStr, line, delimiter string) string {
+	replacedCmdStr := strings.ReplaceAll(
+		cmdStr,
+		"{}",
+		line,
+	)
+	if delimiter != "" {
+		fields := strings.Split(line, delimiter)
+		for i, field := range fields {
+			replacedCmdStr = strings.ReplaceAll(
+				replacedCmdStr,
+				fmt.Sprintf("{%d}", i+1),
+				field,
+			)
+		}
+	}
+	return replacedCmdStr
 }
 
 // startup is called at application startup

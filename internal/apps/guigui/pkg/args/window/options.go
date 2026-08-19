@@ -10,6 +10,6 @@ type WindowOptions struct {
 	Height     int    `arg:"--height" default:"768" help:"Window height"`
 	X          *int   `arg:"--x" help:"Window X position"`
 	Y          *int   `arg:"--y" help:"Window Y position"`
-	Center     bool   `arg: "--center" help:"Window center position"`
+	Center     bool   `arg:"--center" help:"Window center position"`
 	Scroll     bool   `arg:"--scroll" help:"yad comp stub"`
 }

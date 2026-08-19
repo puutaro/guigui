@@ -4,7 +4,15 @@ import { useEffect, useState, useRef } from 'react';
 import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
 import { useUndoRedo} from './form/hooks/useAndoRedo';
 import { useKeyboardShortcut} from './form/hooks/useFormKeyShortcut';
-import { WriteStdout, GetFormConfig, GetListConfig, ExitWithNumber, WriteStderr } from '../wailsjs/go/main/App';
+import { 
+  WriteStdout, 
+  GetFormConfig, 
+  GetListConfig, 
+  ExitWithNumber, 
+  RunReloadCmdForList, 
+  RunlCmdForList,
+  WriteStderr,
+ } from '../wailsjs/go/main/App';
 import { form, list } from '../wailsjs/go/models'
 import { FormComponent } from './form/FormComponent';
 
@@ -17,6 +25,9 @@ function App() {
     
     // Altキーが押されているかどうかを管理するステート
     const [isAltPressed, setIsAltPressed] = useState(false);
+    const [listConfig, setListConfig] = useState<list.ListConfigResponse | null>(null);
+    // リスト設定内の reloads 情報を保持するRef（固定値のためステート不要）
+    // const listConfigRef = useRef<list.ListConfigResponse>();
     
     // 1. undo/redo フックでフォーム全体の値を管理（初期値は空のオブジェクト）
     const {  
@@ -38,12 +49,21 @@ function App() {
 
     useEffect(() => {
       if (viewType !== VIEW_MODES.LIST) return
-      setSelectedIndex(0);
+      setSelectedIndex(headerLines);
     }, [searchQuery, listItems]);
 
-    const filteredListItems = viewType === VIEW_MODES.LIST ? listItems.filter(item => 
+    // const headerLines = listConfigRef.current?.headerLines ?? 0;
+    // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
+    const headerLines = listConfig?.headerLines ?? 0;
+    const headerItems = viewType === VIEW_MODES.LIST ? listItems.slice(0, headerLines) : [];
+    const bodyItems = viewType === VIEW_MODES.LIST ? listItems.slice(headerLines) : [];
+    // 2. ボディ部分のみに検索クエリの絞り込みを適用
+    const filteredBodyItems = bodyItems.filter((item) =>
       item.toLowerCase().includes(searchQuery.toLowerCase())
-    ) : []
+    );
+
+    // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
+    const filteredListItems = [...headerItems, ...filteredBodyItems];
     // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
     useEffect(() => {
       if (viewType !== VIEW_MODES.LIST) return
@@ -164,19 +184,15 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
       formConfigRef.current = formConfig;
       formValuesRef.current = formValues;
     }, [formConfig, formValues]);
-    // Alt + 頭文字キーによるショートカット処理
-    useEffect(() => {
+useEffect(() => {
       const handleShortcut = (e: KeyboardEvent) => {
+        const isAltActive = e.altKey || isAltPressedRef.current;
+        const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
         const currentConfig = formConfigRef.current;
         if (!currentConfig?.buttons) return;
 
-        // 1. Alt / Option ショートカットの判定
-        // e.keyの代わりに e.code を使い、'KeyA' などの文字列から末尾の文字(a)を取得する
-        const isAltActive = e.altKey || isAltPressedRef.current;
-        const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
-
+        // 1. Alt / Option ショートカットの判定（ボタン用）
         if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
-          // e.code は "KeyA" や "KeyB" になるので、最後の1文字を小文字で取得
           const pressedKey = e.code.replace('Key', '').toLowerCase();
           
           const targetButton = currentConfig.buttons.find(btn => {
@@ -192,7 +208,6 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
         }
 
         // 2. Ctrl + Enter ショートカットの判定
-        // e.ctrlKey だけでなく Mac対応のために isCtrlPressedRef も考慮
         const isCtrlActive = e.ctrlKey || isCtrlPressedRef.current;
         if (isCtrlActive && e.key === 'Enter') {
           const pressedKey = 'o';
@@ -232,11 +247,13 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
                     console.error("Failed to load form config:", err);
                 });
         } else if (viewType === VIEW_MODES.LIST) {
-            // TODO: リスト用のGo側APIがある場合はここで呼び出す
-            // 例: GetListItems().then(res => setListItems(res)).catch(...)
             GetListConfig()
               .then((res) =>{ 
                 setListItems(res.list)
+                if(res.reloads){
+                  setListConfig(res)
+                  // listConfigRef.current = res
+                }
             }).catch((err) =>{
                     console.error("Failed to load form config:", err);
             })
@@ -272,18 +289,80 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
           <div 
             id="list-view" 
             className="flex flex-col gap-4 max-w-lg mx-auto"
+            tabIndex={0}
             onKeyDown={(e) => {
+                const isAltActive = e.altKey;
+                const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
+                if (isAltActive && !isModifierKey) {
+                  const pressedKey =
+                    (e.code.startsWith('Key') && 
+                    e.code.length === 4
+                  ) ? e.code.charAt(3).toLowerCase()
+                    : e.key.toLowerCase();
+                  const matchedExecute = 
+                    listConfig?.executes.find(
+                      r => r.key.toLowerCase() === pressedKey);
+                  if (matchedExecute) {
+                    e.preventDefault();
+                    const selectedItem = filteredListItems[selectedIndex];
+                    RunlCmdForList(
+                      matchedExecute.shell,
+                      selectedItem,
+                      listConfig?.delimiter ?? "",
+                    );
+                    return
+                  }
+                  // getListConfig で取得したデータ（またはスコープ内の変数）から直接探す
+                  const matchedReload = 
+                    listConfig?.reloads.find(
+                      r => r.key.toLowerCase() === pressedKey);
+                  if (matchedReload) {
+                    e.preventDefault();
+                    const selectedItem = filteredListItems[selectedIndex];
+                    RunReloadCmdForList(
+                      matchedReload.shell,
+                      selectedItem,
+                      listConfig?.delimiter ?? "",
+                    ).then((res) => {
+                      setListItems(res.split("\n"))
+                    });
+                    return
+                  }
+                }
               if (filteredListItems.length === 0) return;
               switch (true) {
                 case (e.key === 'ArrowDown'): {
-                e.preventDefault();
-                setSelectedIndex((prev) => (prev < filteredListItems.length - 1 ? prev + 1 : prev));
-                } 
+                  e.preventDefault();
+                  const headerLines = listConfig?.headerLines ?? 0;
+                  const isCycle = listConfig?.cycle ?? false;
+                  setSelectedIndex((prev) => {
+                    // ボディ部分が存在しない場合はそのまま
+                    if (filteredListItems.length <= headerLines) return prev;
+                    if (prev < filteredListItems.length - 1) {
+                      return prev + 1;
+                    } else {
+                      // 一番下にいるとき
+                      return isCycle ? headerLines : prev; // cycle が true なら選択可能な最初の行へ
+                    }
+                  })
+                }
                 break;
                 case (e.key === 'ArrowUp'): {
                   e.preventDefault();
-                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-                } 
+                  // headerLines 未満には上がらないようにする（最小でも headerLines まで）
+                  const headerLines = listConfig?.headerLines ?? 0;
+                  const isCycle = listConfig?.cycle ?? false;
+                  
+                  setSelectedIndex((prev) => {
+                    // ボディ部分が存在しない場合、あるいはヘッダー行にいる場合はそのまま
+                    if (filteredListItems.length <= headerLines || prev <= headerLines) {
+                      return isCycle && filteredListItems.length > headerLines 
+                        ? filteredListItems.length - 1 // 選択可能な一番上にいるときに上を押したら最後の行へ
+                        : prev;
+                    }
+                    return prev - 1;
+                  });
+                }
                 break;
                 case (e.key === 'Enter'): {
                   e.preventDefault();
@@ -334,7 +413,11 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
               }
             }}
           >
-            <h1 className="text-2xl font-bold text-blue-900 mb-1">List Dialog</h1>
+            {listConfig?.title && (
+            <h1 className="text-2xl font-bold text-blue-900 mb-1">
+              {listConfig.title}
+            </h1>
+          )}
             <input
               ref={searchInputRef} // ★ Refを紐付け
               type="text"
@@ -348,7 +431,12 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
                   e.key === 'ArrowUp'
                 ) {
                   e.preventDefault();
-                  listItemRefs.current[0]?.focus();
+                  const bodyStartIndex = headerLines;
+                  if (filteredListItems.length > bodyStartIndex) {
+                    // 最初のデータ行（ボディの先頭）にフォーカスを当てる
+                    setSelectedIndex(bodyStartIndex);
+                    listItemRefs.current[bodyStartIndex]?.focus();
+                  }
                 }
               }}
             />
@@ -359,10 +447,21 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
                 <p className="text-gray-500 p-2">No matching items.</p>
               ) : (
                 <ul className="flex flex-col gap-1">
-                  {filteredListItems.map((item, index) => (
+                  {filteredListItems.map((item, index) => {
+                    const isHeader = index < headerLines;
+                    const delimiter = listConfig?.delimiter ?? "" 
+                    const targetField = listConfig?.withNth ?? 0
+                    const fields = item.split(delimiter);
+                    let displayText = item 
+                    if(delimiter != "" && targetField > 0){
+                     displayText = fields[targetField] !== undefined ?
+                      fields[targetField] :
+                       item;
+                    }
+                    return (
                     <li 
                       key={index}
-                      tabIndex={0}
+                      tabIndex={isHeader ? -1 : 0}
                       ref={(el) => (listItemRefs.current[index] = el)}
                       className="p-2 hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border border-transparent focus:border-blue-400"
                       onClick={() => {
@@ -370,9 +469,9 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
                         listItemRefs.current[index]?.focus();
                       }}
                     >
-                      {item}
-                    </li>
-                  ))}
+                      {displayText}
+                    </li>);
+                  })}
                 </ul>
               )}
             </div>
