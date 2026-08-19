@@ -1,4 +1,5 @@
 import { form } from '../../wailsjs/go/models';
+import { useEffect, useRef } from 'react';
 import { DirSelectField } from '../form/editor/dirSelectField';
 import { FileSelectField } from '../form/editor/fileSelectField';
 import { NumEditField } from '../form/editor/numEditField';
@@ -24,6 +25,19 @@ export const  FormComponent = ({
    borderValue,
   }: FormComponentProps
 ) => {
+  const firstFieldRef = useRef<HTMLDivElement | null>(null);
+  const hasFocusedRef = useRef(false); // ★ 初回実行済みフラグ
+  // フォームが最初に描画されたときの1回だけ実行
+  useEffect(() => {
+    if (!formConfig || hasFocusedRef.current) return;
+    const timer = setTimeout(() => {
+      hasFocusedRef.current = true; // フラグを立てて2回目以降をブロック
+      const target = firstFieldRef.current?.querySelector('input, select, button, [tabindex="0"]') as HTMLElement;
+      target?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [formConfig]);
+    const firstFocusableIndex = formConfig?.fields.findIndex(field => 'LBL' != field.type) ?? -1;
     return (
         (
           <div id="form-view" className="flex flex-col h-[calc(100vh-4rem)]">
@@ -41,6 +55,7 @@ export const  FormComponent = ({
               <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                 {formConfig.fields.map((field, index) => {
                   const key = `${index}_${field.label}`;
+                  const isFirstTarget = index === firstFocusableIndex; // 最初のエレメントか判定
                   let labelDisplayValue = 'inline';
                   const btnList = ['BTN', 'FBTN'] as const
                   const labelHIddenList = ['LBL', ...btnList]
@@ -52,6 +67,7 @@ export const  FormComponent = ({
                   }
                   return (
                     <div 
+                      ref={isFirstTarget ? firstFieldRef : undefined}
                       key={index} 
                       className="flex flex-col"
                       style={{ paddingBottom: `${borderValue}px` }}

@@ -26,11 +26,13 @@ type ButtonDef struct {
 }
 
 type FormCmd struct {
-	ItemSeparator string   `arg:"--item-separator" default:"!" help:"Separator for list items"`
-	Separator     string   `arg:"--separator" default:"|" help:"Separator for output values"`
-	DateFormat    string   `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
-	Fields        []string `arg:"--field,separate" help:"Define fields in the form"`
-	FieldValues   []string `arg:"positional,separate" help:"field values"`
+	ItemSeparator    string   `arg:"--item-separator" default:"!" help:"Separator for list items"`
+	Separator        string   `arg:"--separator" default:"|" help:"Separator for output values"`
+	DateFormat       string   `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
+	Fields           []string `arg:"--field,separate" help:"Define fields in the form"`
+	FieldValues      []string `arg:"positional,separate" help:"field values"`
+	SelectableLabels bool     `arg:"--selectable-labels" help:"stub for yad comp"`
+	NoButtons        bool     `arg:"--no-buttons" help:"stub for yad comp"`
 	window.WindowOptions
 	buttons.ButtonOptions
 }
@@ -75,9 +77,11 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		parsedFields = append(parsedFields, parsed)
 	}
 	var parsedButtons []ButtonDef
-	for _, raw := range cmd.Buttons {
-		parsed := parseButtonString(raw)
-		parsedButtons = append(parsedButtons, parsed)
+	if !cmd.NoButtons {
+		for _, raw := range cmd.Buttons {
+			parsed := parseButtonString(raw)
+			parsedButtons = append(parsedButtons, parsed)
+		}
 	}
 	if len(parsedButtons) == 0 {
 		parsedButtons = append(
