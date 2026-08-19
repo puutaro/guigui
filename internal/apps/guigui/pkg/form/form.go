@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/buttons"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
@@ -29,7 +30,7 @@ type FormCmd struct {
 	Separator     string   `arg:"--separator" default:"|" help:"Separator for output values"`
 	DateFormat    string   `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
 	Fields        []string `arg:"--field,separate" help:"Define fields in the form"`
-	FieldValues   []string `arg:"positional,separate,required" help:"field values"`
+	FieldValues   []string `arg:"positional,separate" help:"field values"`
 	window.WindowOptions
 	buttons.ButtonOptions
 }
@@ -78,9 +79,18 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		parsed := parseButtonString(raw)
 		parsedButtons = append(parsedButtons, parsed)
 	}
+	if len(parsedButtons) == 0 {
+		parsedButtons = append(
+			parsedButtons,
+			ButtonDef{
+				Label:    "Ok",
+				ExitCode: 0,
+			},
+		)
+	}
 
 	return FormConfigResponse{
-		Text:          cmd.TextUnescapeNewlines(),
+		Text:          text.TextUnescapeNewlines(cmd.Text),
 		Borders:       cmd.Borders,
 		FontSize:      cmd.FontSize,
 		ItemSeparator: cmd.ItemSeparator,
@@ -123,11 +133,17 @@ func capitalizeFirst(s string) string {
 // 文字列パースのヘルパー（簡易版）
 func parseFieldString(raw, fValue, itemSep string) FieldDef {
 	// 実際には yad の書式（--field="ラベル:タイプ" 初期値 のようなスペース区切りやイコール区切り）に合わせて堅牢にパースします
-	labelType := strings.Split(raw, ":")
-	label := labelType[0]
-	fType := "TXT" // デフォルト
-	if len(labelType) > 1 {
-		fType = labelType[1]
+	label, fType := splitByLastColon(raw)
+	if fType == "" {
+		fType = "TXT" // デフォルト
+	}
+	formLabel := ""
+	switch true {
+	case
+		fType == "LBL":
+		formLabel = text.TextUnescapeNewlines(label)
+	default:
+		formLabel = getFirstLine(label)
 	}
 	var srcValue string
 	var items []string
@@ -144,9 +160,8 @@ func parseFieldString(raw, fValue, itemSep string) FieldDef {
 		defaultValue, _, _ = strings.Cut(fValue, "!")
 		srcValue = fValue
 	}
-
 	return FieldDef{
-		Label:        label,
+		Label:        formLabel,
 		Type:         fType,
 		DefaultValue: defaultValue,
 		Items:        items,
@@ -181,4 +196,19 @@ func makeItemsAndDefaultValueForCB(
 		break
 	}
 	return items, defaultValue
+}
+
+func splitByLastColon(s string) (string, string) {
+	idx := strings.LastIndex(s, ":")
+	if idx == -1 {
+		return s, ""
+	}
+	// 2. 最後の ":" の前後でスライスして切り分ける
+	before := s[:idx]  // ":" より前
+	after := s[idx+1:] // ":" より後ろ
+	return before, after
+}
+func getFirstLine(s string) string {
+	first, _, _ := strings.Cut(s, "\n")
+	return first
 }

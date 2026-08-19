@@ -43,8 +43,9 @@ export const  FormComponent = ({
                   const key = `${index}_${field.label}`;
                   let labelDisplayValue = 'inline';
                   const btnList = ['BTN', 'FBTN'] as const
+                  const labelHIddenList = ['LBL', ...btnList]
                   switch (true) {
-                  case (btnList  as readonly string[]).includes(field.type):{
+                  case (labelHIddenList  as readonly string[]).includes(field.type):{
                     labelDisplayValue = 'none';
                     break;
                   }
@@ -117,7 +118,7 @@ export const  FormComponent = ({
                       )}
                       {field.type === 'LBL' && (
                         <span 
-                          className="text-gray-600 block"
+                          className="text-gray-600 block whitespace-pre-wrap"
                           style={{ padding: `${borderValue}px` }}
                         >
                           {field.label}

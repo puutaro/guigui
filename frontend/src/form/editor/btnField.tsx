@@ -14,7 +14,6 @@ export const BtnField = ({
   setFieldValue,
   borderValue 
 }: BtnFieldProps) => {
-  setFieldValue(fieldKey, field.defaultValue)
   return (
     <button
       type="button"
