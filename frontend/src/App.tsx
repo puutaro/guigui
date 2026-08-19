@@ -4,8 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
 import { useUndoRedo} from './form/hooks/useAndoRedo';
 import { useKeyboardShortcut} from './form/hooks/useFormKeyShortcut';
-import { WriteStdout, GetFormConfig, ExitWithNumber, WriteStderr } from '../wailsjs/go/main/App';
-import { form } from '../wailsjs/go/models'
+import { WriteStdout, GetFormConfig, GetListConfig, ExitWithNumber, WriteStderr } from '../wailsjs/go/main/App';
+import { form, list } from '../wailsjs/go/models'
 import { FormComponent } from './form/FormComponent';
 
 const VALID_MODES = ['form', 'list', 'alert'] as const;
@@ -31,6 +31,32 @@ function App() {
 
     // フォーム設定を保持するステート
     const [formConfig, setFormConfig] = useState<form.FormConfigResponse | null>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const [listItems, setListItems] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    useEffect(() => {
+      if (viewType !== VIEW_MODES.LIST) return
+      setSelectedIndex(0);
+    }, [searchQuery, listItems]);
+
+    const filteredListItems = viewType === VIEW_MODES.LIST ? listItems.filter(item => 
+      item.toLowerCase().includes(searchQuery.toLowerCase())
+    ) : []
+    // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
+    useEffect(() => {
+      if (viewType !== VIEW_MODES.LIST) return
+      // 少しだけタイミングをずらすか、DOMの描画完了を待ってフォーカスする
+      requestAnimationFrame(() => {
+        const targetListElement = listItemRefs.current[selectedIndex];
+        if (!targetListElement) return
+        targetListElement.focus();
+      });
+    }, [selectedIndex, viewType, filteredListItems]);
+
+    // リスト用のDOM要素（li）を格納するための配列参照
+    const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     useKeyboardShortcut({
       onUndo: () => {
@@ -204,6 +230,16 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
                 .catch((err) => {
                     console.error("Failed to load form config:", err);
                 });
+        } else if (viewType === VIEW_MODES.LIST) {
+            // TODO: リスト用のGo側APIがある場合はここで呼び出す
+            // 例: GetListItems().then(res => setListItems(res)).catch(...)
+            GetListConfig()
+              .then((res) =>{ 
+                setListItems(res.list)
+            }).catch((err) =>{
+                    console.error("Failed to load form config:", err);
+            })
+
         }
     }, [viewType]);
 
@@ -231,9 +267,114 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
           />
         ) }
 
-        {viewType === VIEW_MODES.LIST && (
-          <div id="list-view">
-            <h1 className="text-2xl font-bold text-blue-900 mb-4">List Dialog</h1>
+       {viewType === VIEW_MODES.LIST && (
+          <div 
+            id="list-view" 
+            className="flex flex-col gap-4 max-w-lg mx-auto"
+            onKeyDown={(e) => {
+              if (filteredListItems.length === 0) return;
+              switch (true) {
+                case (e.key === 'ArrowDown'): {
+                e.preventDefault();
+                setSelectedIndex((prev) => (prev < filteredListItems.length - 1 ? prev + 1 : prev));
+                } 
+                break;
+                case (e.key === 'ArrowUp'): {
+                  e.preventDefault();
+                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+                } 
+                break;
+                case (e.key === 'Enter'): {
+                  e.preventDefault();
+                  const selectedItem = filteredListItems[selectedIndex];
+                  if (!selectedItem) return
+                  (async () => {
+                    try {
+                      await WriteStdout(selectedItem);
+                      await ExitWithNumber(0);
+                    } catch (err) {
+                      console.error("Failed to output selected item:", err);
+                    }
+                  })();
+                }
+                break;
+                case (
+                  (e.key.length === 1 
+                  && !e.ctrlKey 
+                  && !e.metaKey 
+                  && !e.altKey ) ||
+                  e.key === 'Backspace' || 
+                  e.key === 'Delete'
+                ): {
+                  // ★ リストにフォーカスがある状態で文字キーが押されたら、
+                  // 瞬時に検索窓にフォーカスを戻し、入力を邪魔しないようにする
+                  e.preventDefault();
+                  searchInputRef.current?.focus();
+                  switch (true) {
+                    case e.key === 'Backspace': {
+                      // Backspaceの場合は検索クエリの末尾を1文字削る
+                      setSearchQuery(prev => prev.slice(0, -1));
+                    }
+                    break;
+                    case (e.key === 'Delete'): {
+                      // Deleteの場合は必要に応じて全クリアにするか、何もしないなどをお好みで設定できます
+                      // 今回はBackspaceと同様に末尾を削る動作にしておくと自然です
+                      setSearchQuery(prev => prev.slice(0, -1));
+                    }
+                    break;
+                    default: {
+                      // 通常の文字入力
+                      setSearchQuery(prev => prev + e.key);
+                    }
+                    break;
+                  }
+                }
+                break;
+              }
+            }}
+          >
+            <h1 className="text-2xl font-bold text-blue-900 mb-1">List Dialog</h1>
+            <input
+              ref={searchInputRef} // ★ Refを紐付け
+              type="text"
+              placeholder="Type to search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500"
+              onKeyDown={(e) => {
+                if (
+                  e.key === 'ArrowDown' || 
+                  e.key === 'ArrowUp'
+                ) {
+                  e.preventDefault();
+                  listItemRefs.current[0]?.focus();
+                }
+              }}
+            />
+
+            {/* 絞り込み結果を表示するスクロールエリア */}
+            <div className="border border-gray-300 rounded p-2 max-h-[60vh] overflow-y-auto">
+              {filteredListItems.length === 0 ? (
+                <p className="text-gray-500 p-2">No matching items.</p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {filteredListItems.map((item, index) => (
+                    <li 
+                      key={index}
+                      tabIndex={0}
+                      ref={(el) => (listItemRefs.current[index] = el)}
+                      className="p-2 hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border border-transparent focus:border-blue-400"
+                      onClick={() => {
+                        setSelectedIndex(index);
+                        listItemRefs.current[index]?.focus();
+                      }}
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
 

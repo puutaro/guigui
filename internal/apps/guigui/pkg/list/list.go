@@ -3,12 +3,13 @@ package list
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
 type ListCmd struct {
-	Column []string `name:"column" help:"Columns for the list"`
+	List string `arg:"--list" help:"string contents separated by newline"`
 	window.WindowOptions
 }
 
@@ -26,10 +27,18 @@ func (c *ListCmd) GetWindowConfig() window.WindowOptions {
 	}
 }
 
+type ListConfigResponse struct {
+	List     []string `json:"list"`
+	Borders  int      `json:"borders"`
+	FontSize int      `json:"fontSize"`
+}
+
 // GetListConfig returns list configuration for frontend
 // Pass list config to frontend
-func (cmd *ListCmd) GetListConfig() map[string]any {
-	return map[string]any{
-		"columns": cmd.Column,
+func (cmd *ListCmd) GetListConfig() ListConfigResponse {
+	return ListConfigResponse{
+		List:     strings.Split(cmd.List, "\n"),
+		Borders:  cmd.Borders,
+		FontSize: cmd.FontSize,
 	}
 }

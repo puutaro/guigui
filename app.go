@@ -73,6 +73,12 @@ func (a *App) GetFormConfig() form.FormConfigResponse {
 	}
 	return a.formCmd.GetFormConfig()
 }
+func (a *App) GetListConfig() list.ListConfigResponse {
+	if a.listCmd == nil {
+		return list.ListConfigResponse{}
+	}
+	return a.listCmd.GetListConfig()
+}
 
 func (a *App) SelectFile(title string) (string, error) {
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
