@@ -141,7 +141,9 @@ func parseFieldString(raw, fValue, itemSep string) FieldDef {
 	switch true {
 	case
 		fType == "LBL":
-		formLabel = text.TextUnescapeNewlines(label)
+		formLabel = text.TextUnescapeNewlines(
+			decodeHtmlEntities(label),
+		)
 	default:
 		formLabel = getFirstLine(label)
 	}
@@ -211,4 +213,22 @@ func splitByLastColon(s string) (string, string) {
 func getFirstLine(s string) string {
 	first, _, _ := strings.Cut(s, "\n")
 	return first
+}
+
+func decodeHtmlEntities(text string) string {
+	if text == "" {
+		return ""
+	}
+
+	// 置換のペアを定義
+	replacer := strings.NewReplacer(
+		"&quot;", "\"",
+		"&amp;", "&",
+		"&lt;", "<",
+		"&gt;", ">",
+		"&apos;", "'",
+		"&nbsp;", " ",
+	)
+
+	return replacer.Replace(text)
 }
