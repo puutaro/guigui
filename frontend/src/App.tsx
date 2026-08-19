@@ -166,52 +166,53 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
     }, [formConfig, formValues]);
     // Alt + 頭文字キーによるショートカット処理
     useEffect(() => {
-    const handleShortcut = (e: KeyboardEvent) => {
-      const currentConfig = formConfigRef.current;
-      if (!currentConfig?.buttons) return;
-      // 除外すべきキーの判定を厳格化
-      switch (true){
-      case ((e.altKey || isAltPressedRef.current) && !['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key)):{
-        const pressedKey = e.key.toLowerCase();
-        
-        // 厳密にボタンの頭文字と一致するものがあるかチェック
-        const targetButton = currentConfig.buttons.find(btn => {
-          if (!btn.label || btn.label.length === 0) return false;
-          return btn.label.charAt(0).toLowerCase() === pressedKey;
-        });
+      const handleShortcut = (e: KeyboardEvent) => {
+        const currentConfig = formConfigRef.current;
+        if (!currentConfig?.buttons) return;
 
-        // 完全に一致するボタンが存在する場合のみ、イベントを止めて実行する
-        if (targetButton) {
-          e.preventDefault();
-          const initHandleButtonClidk = async () =>{
-            await handleButtonClick(targetButton);
-          }
-          initHandleButtonClidk()
-        }
-        break
-      }
-      case (e.ctrlKey && e.key == 'Enter'):{
-        let pressedKey = 'o';
-        const targetButton = currentConfig.buttons.find(btn => {
-        if (!btn.label || btn.label.length === 0) return false;
-          return btn.label.charAt(0).toLowerCase() === pressedKey;
-        });
-        if (targetButton) {
-          e.preventDefault();
-          const initHanelButtonClidk = async () =>{
-            await handleButtonClick(targetButton);
-          }
-          initHanelButtonClidk()
-        }
-      }
-      }
-    };
+        // 1. Alt / Option ショートカットの判定
+        // e.keyの代わりに e.code を使い、'KeyA' などの文字列から末尾の文字(a)を取得する
+        const isAltActive = e.altKey || isAltPressedRef.current;
+        const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
 
-    window.addEventListener('keydown', handleShortcut);
-    return () => {
-      window.removeEventListener('keydown', handleShortcut);
-    };
-  }, []);
+        if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
+          // e.code は "KeyA" や "KeyB" になるので、最後の1文字を小文字で取得
+          const pressedKey = e.code.replace('Key', '').toLowerCase();
+          
+          const targetButton = currentConfig.buttons.find(btn => {
+            if (!btn.label || btn.label.length === 0) return false;
+            return btn.label.charAt(0).toLowerCase() === pressedKey;
+          });
+
+          if (targetButton) {
+            e.preventDefault();
+            handleButtonClick(targetButton);
+            return;
+          }
+        }
+
+        // 2. Ctrl + Enter ショートカットの判定
+        // e.ctrlKey だけでなく Mac対応のために isCtrlPressedRef も考慮
+        const isCtrlActive = e.ctrlKey || isCtrlPressedRef.current;
+        if (isCtrlActive && e.key === 'Enter') {
+          const pressedKey = 'o';
+          const targetButton = currentConfig.buttons.find(btn => {
+            const btnLabel = btn.label
+            if (!btnLabel || btnLabel.length === 0) return false;
+            return btnLabel.charAt(0).toLowerCase() === pressedKey;
+          });
+          if (targetButton) {
+            e.preventDefault();
+            handleButtonClick(targetButton);
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleShortcut);
+      return () => {
+        window.removeEventListener('keydown', handleShortcut);
+      };
+    }, []);
 
     // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
