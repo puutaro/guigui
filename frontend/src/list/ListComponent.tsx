@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { list } from '../../wailsjs/go/models'
 import { filterListItems } from './filer';
-import {outputLineByExit} from "./libs/outputLineByExit";
 import {onKeyDown} from "./onKeyDown";
 import {FilterDisplay} from "./FilterDisplay";
 
@@ -15,7 +14,6 @@ export const  ListComponent =
         borderValue,
    }: ListComponentProps
 ) => {
-
         const searchInputRef = useRef<HTMLInputElement>(null);
         const [listItems, setListItems] = useState<string[]>([]);
         const [searchQuery, setSearchQuery] = useState("");
