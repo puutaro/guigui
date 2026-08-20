@@ -5,23 +5,30 @@ import { FileSelectField } from '../form/editor/fileSelectField';
 import { NumEditField } from '../form/editor/numEditField';
 import { BtnField } from '../form/editor/btnField';
 import { BottomButton } from '../form/bottomButton/bottomButton';
+import { handleButtonClick } from './handleBottonClick';
 
 // 親から受け取るpropsの型定義
 export type FormComponentProps = {
   formConfig: form.FormConfigResponse | null;
+  formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>;
   formValues: Record<string, string>;
+  formValuesRef: React.MutableRefObject<Record<string, string>>,
   setFieldValue: (key: string, value: string) => void;
-  handleButtonClick: (btn: form.ButtonDef) => Promise<void>;
   isAltPressed: boolean;
+  isAltPressedRef: React.MutableRefObject<boolean>;
+  IsCtrlPressedRef: React.MutableRefObject<boolean>;
   borderValue: number;
 }
 
 export const  FormComponent = ({
   formConfig,
+  formConfigRef,
   formValues,
+  formValuesRef,
   setFieldValue,
-  handleButtonClick,
   isAltPressed ,
+  isAltPressedRef,
+  IsCtrlPressedRef,
    borderValue,
   }: FormComponentProps
 ) => {
@@ -38,9 +45,60 @@ export const  FormComponent = ({
     return () => clearTimeout(timer);
   }, [formConfig]);
     const firstFocusableIndex = formConfig?.fields.findIndex(field => 'LBL' != field.type) ?? -1;
+    const isExecutingRef = useRef(false);
     return (
         (
-          <div id="form-view" className="flex flex-col h-[calc(100vh-4rem)]">
+          <div 
+            id="form-view" 
+            className="flex flex-col h-[calc(100vh-4rem)]"
+            onKeyDown={(e) => {
+              const isAltActive = e.altKey || isAltPressedRef.current;
+              const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
+              const currentConfig = formConfigRef.current;
+              if (!currentConfig?.buttons) return;
+
+              // 1. Alt / Option ショートカットの判定（ボタン用）
+              if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
+                const pressedKey = e.code.replace('Key', '').toLowerCase();
+
+                const targetButton = currentConfig.buttons.find(btn => {
+                  if (!btn.label || btn.label.length === 0) return false;
+                  return btn.label.charAt(0).toLowerCase() === pressedKey;
+                });
+
+                if (targetButton) {
+                  e.preventDefault();
+                  handleButtonClick(
+                      formConfigRef,
+                      targetButton,
+                      formValuesRef,
+                      isExecutingRef,
+                  );
+                  return;
+                }
+              }
+              // 2. Ctrl + Enter ショートカットの判定
+              const isCtrlActive = e.ctrlKey || IsCtrlPressedRef.current;
+              if (isCtrlActive && e.key === 'Enter') {
+                const pressedKey = 'o';
+                const targetButton = currentConfig.buttons.find(btn => {
+                  const btnLabel = btn.label
+                  if (!btnLabel || btnLabel.length === 0) return false;
+                  return btnLabel.charAt(0).toLowerCase() === pressedKey;
+                });
+                if (targetButton) {
+                  e.preventDefault();
+                  handleButtonClick(
+                      formConfigRef,
+                      targetButton,
+                      formValuesRef,
+                      isExecutingRef,
+                  );
+                }
+              }
+            }
+          }
+          >
             {formConfig?.text && (
             <h1 
               className="font-bold text-blue-900 flex-shrink-0"
@@ -162,9 +220,12 @@ export const  FormComponent = ({
               })}
             </div>
               <BottomButton 
-                borderValue={borderValue}
+                  borderValue={borderValue}
                   formConfig={formConfig}
+                  formConfigRef={formConfigRef}
+                  formValuesRef={formValuesRef}
                   isAltPressed={isAltPressed}
+                  isExecutingRef={isExecutingRef}
                   handleButtonClick={handleButtonClick}
                 />
             </div>

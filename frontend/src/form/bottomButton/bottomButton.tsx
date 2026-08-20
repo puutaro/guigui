@@ -3,14 +3,25 @@ import { form } from '../../../wailsjs/go/models';
 export type BottomButtonProps = {
   borderValue: number;
   formConfig: form.FormConfigResponse;
+  formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>;
+  formValuesRef: React.MutableRefObject<Record<string, string>>,
   isAltPressed: boolean;
-  handleButtonClick: (btn: form.ButtonDef) => Promise<void>;
+  isExecutingRef: React.MutableRefObject<boolean>,
+  handleButtonClick: (
+    formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>,
+    btn: form.ButtonDef,
+    formValuesRef: React.MutableRefObject<Record<string, string>>,
+    isExecutingRef: React.MutableRefObject<boolean>,
+  ) => Promise<void>;
 }
 
 export const BottomButton = ({ 
   borderValue,
   formConfig,
+  formConfigRef,
+  formValuesRef,
   isAltPressed,
+  isExecutingRef,
   handleButtonClick,
 }: BottomButtonProps) => {
   return (
@@ -24,7 +35,12 @@ export const BottomButton = ({
         <button
             key={idx}
             type="button"
-            onClick={() => handleButtonClick(btn)}
+            onClick={() => handleButtonClick(
+                formConfigRef,
+                btn,
+                formValuesRef,
+                isExecutingRef,
+            )}
             className="border rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-sm shadow-sm"
             style={{ 
                 padding: `${borderValue}px`, 

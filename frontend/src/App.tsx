@@ -2,6 +2,7 @@ import wailsLogo from './assets/wails.png'
 import './App.css'
 import { useEffect, useState, useRef } from 'react';
 import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
+import { filterListItems } from './list/filer';
 import { useUndoRedo} from './form/hooks/useAndoRedo';
 import { useKeyboardShortcut} from './form/hooks/useFormKeyShortcut';
 import { 
@@ -53,70 +54,17 @@ function App() {
       setSelectedIndex(headerLines);
     }, [searchQuery, listItems]);
 
-    // const headerLines = listConfigRef.current?.headerLines ?? 0;
     // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
     const headerLines = listConfig?.headerLines ?? 0;
     const headerItems = viewType === VIEW_MODES.LIST ? listItems.slice(0, headerLines) : [];
     const bodyItems = viewType === VIEW_MODES.LIST ? listItems.slice(headerLines) : [];
     // 2. ボディ部分のみに検索クエリの絞り込みを適用
-    let filteredBodyItems = bodyItems; 
-    if (searchQuery.length > 0) {
-      let delimiter = "";
-      if(
-        (listConfig?.delimiter && listConfig.delimiter.length > 0)
-      ){
-        delimiter = listConfig.delimiter
-      }
-      let withNth = 0;
-      if(
-        (listConfig?.withNth && listConfig.withNth > 0)
-      ){
-        withNth = listConfig.withNth
-      }
-    const lowerSQuery = searchQuery.toLowerCase();
-    filteredBodyItems = bodyItems.filter((item) =>{
-      let searchItem = item
-      if(
-        withNth > 0 &&
-        delimiter.length > 0
-      ){
-        searchItem = item.split(delimiter)[withNth] ?? item
-      }
-      let curIndex = -1;
-      for (const  char of lowerSQuery) {
-        const charIndex = searchItem.toLowerCase().indexOf(char, curIndex + 1);
-        if(charIndex <= curIndex  || charIndex === -1){
-          return false
-        }
-        curIndex = charIndex;
-      }
-      return true
-    }).map((item) => {
-      let searchItem = item
-      if(
-        withNth > 0 &&
-        delimiter.length > 0
-      ){
-        searchItem = item.split(delimiter)[withNth] ?? item
-      }
-      let curIndex = -1;
-      let point = 0;
-      for (const  char of lowerSQuery) {
-        const charIndex = searchItem.toLowerCase().indexOf(char, curIndex + 1);
-        if(curIndex !== -1){
-          point += charIndex - curIndex;
-        }
-        curIndex = charIndex;
-      }
-      return {
-          pointKey: point,
-          itemKey: item,
-        }
-    }).sort((p1, p2) => p1.pointKey - p2.pointKey)
-    .map(obj => obj.itemKey
-    );
-  }
-
+    const filteredBodyItems = filterListItems(
+      bodyItems,
+      searchQuery, 
+      listConfig?.delimiter,
+      listConfig?.withNth,
+    )    
     // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
     const filteredListItems = [...headerItems, ...filteredBodyItems];
     // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
@@ -186,51 +134,6 @@ function App() {
         window.removeEventListener('blur', handleBlur);
       };
     }, []);
-  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-  const isExecutingRef = useRef(false);
-    // ボタンのアクションを実行する共通関数
-const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
-    if (isExecutingRef.current) {
-      return;
-    }
-    isExecutingRef.current = true;
-    if (btn.exitCode == 1){
-      await ExitWithNumber(btn.exitCode);
-      return
-    }
-    
-    let currentConfig = formConfigRef.current;
-    let fields = currentConfig?.fields || [];
-    let retries = 0;
-    while (fields.length === 0 && retries < 5) {
-      await sleep(10);
-      console.log(`retry :${retries}`)
-      currentConfig = formConfigRef.current;
-      fields = currentConfig?.fields || [];
-      retries++;
-    }
-    const separator = currentConfig?.separator || "!";
-    const currentValues = formValuesRef.current;
-    const outputString = fields
-      .map((field, index) => {
-        try {
-          const label = field.label;
-          const key = `${index}_${label}`;
-          const rawValue = currentValues[key] ?? field.defaultValue ?? "";
-          console.log(`condole ${key}, ${rawValue}`);
-          return rawValue;
-        } catch (err: any) {
-          // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
-          console.log(`Excenptio at index ${index}: ${err?.message || err}`);
-          return "";
-        }
-      })
-      .join(separator);
-    // await WriteStdout(outputList.join("===")) 
-    await WriteStdout(outputString);
-    await ExitWithNumber(btn.exitCode);
-  };
 
     const formConfigRef = useRef(formConfig);
     const formValuesRef = useRef(formValues);
@@ -239,50 +142,6 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
       formConfigRef.current = formConfig;
       formValuesRef.current = formValues;
     }, [formConfig, formValues]);
-useEffect(() => {
-      const handleShortcut = (e: KeyboardEvent) => {
-        const isAltActive = e.altKey || isAltPressedRef.current;
-        const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
-        const currentConfig = formConfigRef.current;
-        if (!currentConfig?.buttons) return;
-
-        // 1. Alt / Option ショートカットの判定（ボタン用）
-        if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
-          const pressedKey = e.code.replace('Key', '').toLowerCase();
-          
-          const targetButton = currentConfig.buttons.find(btn => {
-            if (!btn.label || btn.label.length === 0) return false;
-            return btn.label.charAt(0).toLowerCase() === pressedKey;
-          });
-
-          if (targetButton) {
-            e.preventDefault();
-            handleButtonClick(targetButton);
-            return;
-          }
-        }
-
-        // 2. Ctrl + Enter ショートカットの判定
-        const isCtrlActive = e.ctrlKey || isCtrlPressedRef.current;
-        if (isCtrlActive && e.key === 'Enter') {
-          const pressedKey = 'o';
-          const targetButton = currentConfig.buttons.find(btn => {
-            const btnLabel = btn.label
-            if (!btnLabel || btnLabel.length === 0) return false;
-            return btnLabel.charAt(0).toLowerCase() === pressedKey;
-          });
-          if (targetButton) {
-            e.preventDefault();
-            handleButtonClick(targetButton);
-          }
-        }
-      };
-
-      window.addEventListener('keydown', handleShortcut);
-      return () => {
-        window.removeEventListener('keydown', handleShortcut);
-      };
-    }, []);
 
     // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
@@ -356,10 +215,13 @@ useEffect(() => {
         {viewType === VIEW_MODES.FORM && (
           <FormComponent
             formConfig={formConfig}
+            formConfigRef={formConfigRef}
             formValues={formValues}
+            formValuesRef={formValuesRef}
             setFieldValue={setFieldValue}
-            handleButtonClick={handleButtonClick}
             isAltPressed={isAltPressed}
+            isAltPressedRef={isAltPressedRef}
+            IsCtrlPressedRef={isCtrlPressedRef}
             borderValue={borderValue}
           />
         ) }
