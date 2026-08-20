@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { list } from '../../wailsjs/go/models'
-import { filterListItems } from './filer';
+import { filterListItemObjs } from './filer';
 import {onKeyDown} from "./onKeyDown";
 import {FilterDisplay} from "./FilterDisplay";
+import {makeDisplayText} from "./libs/makeDisplayText";
 
 export type ListComponentProps = {
     listConfig: list.ListConfigResponse | null;
@@ -18,6 +19,8 @@ export const  ListComponent =
         const [listItems, setListItems] = useState<string[]>([]);
         const [searchQuery, setSearchQuery] = useState("");
         const [selectedIndex, setSelectedIndex] = useState(0);
+        // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
+        const headerLines = listConfig?.headerLines ?? 0;
         useEffect(() => {
           setSelectedIndex(headerLines);
         }, [searchQuery, listConfig?.list, listItems]);
@@ -25,19 +28,31 @@ export const  ListComponent =
         useEffect(() => {
             setListItems(listConfig?.list ?? []);
         }, [listConfig?.list]);
-        // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
-        const headerLines = listConfig?.headerLines ?? 0;
-        const headerItems = listItems.slice(0, headerLines);
         const bodyItems = listItems.slice(headerLines);
         // 2. ボディ部分のみに検索クエリの絞り込みを適用
-        const filteredBodyItems = filterListItems(
+        const delimiter = listConfig?.delimiter ?? ""
+        const withNth = listConfig?.withNth ?? -1
+        const headerItems = listItems.slice(0, headerLines);
+        const headerItemObjs = headerItems.map((line) => {
+            return {
+                lineKey: line,
+                nthKey: makeDisplayText(line, delimiter, withNth),
+                matchedIndex: [],
+            }
+        })
+        const filteredBodyItemObjs = filterListItemObjs(
           bodyItems,
           searchQuery,
-          listConfig?.delimiter,
-          listConfig?.withNth,
+          delimiter,
+          withNth,
         )
         // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
-        const filteredListItems = [...headerItems, ...filteredBodyItems];
+        const filteredBodyItems = filteredBodyItemObjs.map((obj) => {
+           return obj.lineKey
+        })
+        const headerAndFilteredBodyListItems = [...headerItems, ...filteredBodyItems];
+        // リスト用のDOM要素（li）を格納するための配列参照
+        const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
         // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
         useEffect(() => {
           // 少しだけタイミングをずらすか、DOMの描画完了を待ってフォーカスする
@@ -46,11 +61,7 @@ export const  ListComponent =
             if (!targetListElement) return
             targetListElement.focus();
           });
-        }, [selectedIndex, filteredListItems]);
-
-        // リスト用のDOM要素（li）を格納するための配列参照
-        const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
-
+        }, [selectedIndex, filteredBodyItemObjs]);
             return (
                 <div
                     id="list-view"
@@ -61,7 +72,7 @@ export const  ListComponent =
                             e,
                             setListItems,
                             selectedIndex,
-                            filteredListItems,
+                            headerAndFilteredBodyListItems,
                             setSelectedIndex,
                             setSearchQuery,
                             searchInputRef,
@@ -94,18 +105,22 @@ export const  ListComponent =
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className=" border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
-                        if (
-                            e.key === 'ArrowDown' ||
-                            e.key === 'ArrowUp'
-                        ) {
-                            e.preventDefault();
-                            const bodyStartIndex = headerLines;
-                            if (filteredListItems.length > bodyStartIndex) {
-                                // 最初のデータ行（ボディの先頭）にフォーカスを当てる
-                                setSelectedIndex(bodyStartIndex);
-                                listItemRefs.current[bodyStartIndex]?.focus();
+                        switch (true){
+                            case (
+                                e.key === 'ArrowDown' ||
+                                e.key === 'ArrowUp'
+                            ): {
+                                e.preventDefault();
+                                const bodyStartIndex = headerLines;
+                                if (headerAndFilteredBodyListItems.length > bodyStartIndex) {
+                                    // 最初のデータ行（ボディの先頭）にフォーカスを当てる
+                                    setSelectedIndex(bodyStartIndex);
+                                    listItemRefs.current[bodyStartIndex]?.focus();
+                                }
                             }
+                            break;
                         }
+
                     }}
                     style={{
                         padding: `${borderValue}px`,
@@ -114,17 +129,14 @@ export const  ListComponent =
                 />
                 {/* 絞り込み結果を表示するスクロールエリア */}
                 <div className="rounded max-h-[60vh] overflow-y-auto">
-                    {filteredListItems.length === 0 ? (
+                    {headerAndFilteredBodyListItems.length === 0 ? (
                         <p className="text-gray-500">No matching items.</p>
                     ) : (
                         <FilterDisplay
                             listItemRefs={listItemRefs}
-                            filteredListItems={filteredListItems}
+                            headerItemObjs={headerItemObjs}
+                            filterItemOpjs={filteredBodyItemObjs}
                             setSelectedIndex={setSelectedIndex}
-                            searchQuery={searchQuery}
-                            delimiter={listConfig?.delimiter ??""}
-                            withNth={listConfig?.withNth ?? -1}
-                            headerLines={headerLines}
                             borderValue={borderValue}
                         />
                     )}

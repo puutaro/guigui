@@ -1,7 +1,6 @@
 import {RunCmdByQuitForList, RunCmdForList, RunReloadCmdForList} from "../../wailsjs/go/main/App";
 import {list} from "../../wailsjs/go/models";
 import ExecuteConfig = list.ExecuteConfig;
-import {outputLineByExit} from "./libs/outputLineByExit";
 
 export const onKeyDown = (
     e: React.KeyboardEvent<HTMLDivElement>,
@@ -65,7 +64,8 @@ export const onKeyDown = (
                 selectedItem,
                 delimiter ?? "",
             ).then((res) => {
-                setListItems(res.split("\n"))
+                if (res == undefined) return
+                setListItems(res.split("\n"));
             });
             return
         }
@@ -100,11 +100,14 @@ export const onKeyDown = (
             });
         }
             break;
-        case (e.key === 'Enter'): {
-            e.preventDefault();
-            outputLineByExit(filteredListItems, selectedIndex);
-        }
-            break;
+        // case (e.key === 'Enter'): {
+        //     e.preventDefault()
+        //     outputLineBySelectedIndexByExit(
+        //         filteredListItems,
+        //         selectedIndex,
+        //         );
+        // }
+        //     break;
         case (
             (e.key.length === 1
                 && !e.ctrlKey
@@ -113,6 +116,8 @@ export const onKeyDown = (
             e.key === 'Backspace' ||
             e.key === 'Delete'
         ): {
+            // ★ IME変換中（日本語入力の確定前など）の場合は処理しない
+            if (e.nativeEvent.isComposing) return;
             // ★ リストにフォーカスがある状態で文字キーが押されたら、
             // 瞬時に検索窓にフォーカスを戻し、入力を邪魔しないようにする
             e.preventDefault();

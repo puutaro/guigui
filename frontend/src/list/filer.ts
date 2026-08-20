@@ -1,21 +1,33 @@
+import {makeDisplayText} from "./libs/makeDisplayText";
 
-export const filterListItems = (
+export const filterListItemObjs = (
     bodyItems: string[],
     searchQuery: string, 
-    configDelimiter: string | undefined,
-    configWithNth: number | undefined,
-): string[] => {
-    let filteredBodyItems = bodyItems; 
-    if (searchQuery.length <= 0) return filteredBodyItems;
+    configDelimiter: string,
+    configWithNth: number,
+): {
+  lineKey: string;
+  nthKey: string,
+  matchedIndex: number[];
+}[] => {
+    if (searchQuery.length <= 0) {
+      return bodyItems.map((line)=>{
+        return {
+          lineKey: line,
+          nthKey: makeDisplayText(line, configDelimiter, configWithNth),
+          matchedIndex: [],
+        }
+      })
+    }
       let delimiter = "";
       if(
-        (configDelimiter && configDelimiter.length > 0)
+        (configDelimiter.length > 0)
       ){
         delimiter = configDelimiter
       }
       let withNth = -1;
       if(
-        (configWithNth && configWithNth >= 0)
+        (configWithNth >= 0)
       ){
         withNth = configWithNth
       }
@@ -26,7 +38,7 @@ export const filterListItems = (
         withNth >= 0 &&
         delimiter.length > 0
       ){
-        searchItem = item.split(delimiter)[withNth] ?? item
+        searchItem = item.split(delimiter)[withNth] ?? ""
       }
       let curIndex = -1;
       for (const  char of lowerSQuery) {
@@ -37,28 +49,40 @@ export const filterListItems = (
         curIndex = charIndex;
       }
       return true
-    }).map((item) => {
-      let searchItem = item
+    }).map((line) => {
+      let searchItem = line
       if(
         withNth >= 0 &&
         delimiter.length > 0
       ){
-        searchItem = item.split(delimiter)[withNth] ?? item
+        searchItem = line.split(delimiter)[withNth] ?? line
       }
       let curIndex = -1;
       let point = 0;
-      for (const  char of lowerSQuery) {
+      let matchedIndexes:  number[] = []
+      for (const char of lowerSQuery) {
         const charIndex = searchItem.toLowerCase().indexOf(char, curIndex + 1);
-        if(curIndex !== -1){
-          point += charIndex - curIndex;
+        if (charIndex !== -1) {
+          // ★ 1文字目も含めて常に見つかったインデックスを追加する
+          matchedIndexes.push(charIndex);
+          if (curIndex !== -1) {
+            point += charIndex - curIndex;
+          }
         }
         curIndex = charIndex;
       }
       return {
           pointKey: point,
-          itemKey: item,
+          lineKey: line,
+          nthKey: searchItem,
+          matchedIndex: matchedIndexes,
         }
     }).sort((p1, p2) => p1.pointKey - p2.pointKey)
-    .map(obj => obj.itemKey
-    );
+        .map((obj) =>{
+          return {
+            lineKey: obj.lineKey,
+            nthKey: obj.nthKey,
+            matchedIndex: obj.matchedIndex,
+          }
+        })
   }

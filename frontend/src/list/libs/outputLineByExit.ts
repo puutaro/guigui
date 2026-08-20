@@ -3,11 +3,9 @@ import {
 } from '../../../wailsjs/go/main/App';
 
 export const outputLineByExit =
-   async(filteredListItems: string[], selectedIndex: number) => {
-       const selectedItem = filteredListItems[selectedIndex];
-       if (!selectedItem) return
+   async(line: string) => {
        try {
-           await WriteStdout(selectedItem);
+           await WriteStdout(line);
            await ExitWithNumber(0);
        } catch (err) {
            console.error("Failed to output selected item:", err);
