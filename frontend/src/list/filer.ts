@@ -13,9 +13,9 @@ export const filterListItems = (
       ){
         delimiter = configDelimiter
       }
-      let withNth = 0;
+      let withNth = -1;
       if(
-        (configWithNth && configWithNth > 0)
+        (configWithNth && configWithNth >= 0)
       ){
         withNth = configWithNth
       }
@@ -23,7 +23,7 @@ export const filterListItems = (
     return bodyItems.filter((item) =>{
       let searchItem = item
       if(
-        withNth > 0 &&
+        withNth >= 0 &&
         delimiter.length > 0
       ){
         searchItem = item.split(delimiter)[withNth] ?? item
@@ -40,7 +40,7 @@ export const filterListItems = (
     }).map((item) => {
       let searchItem = item
       if(
-        withNth > 0 &&
+        withNth >= 0 &&
         delimiter.length > 0
       ){
         searchItem = item.split(delimiter)[withNth] ?? item

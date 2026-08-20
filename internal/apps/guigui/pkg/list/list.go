@@ -79,7 +79,7 @@ func (cmd *ListCmd) GetListConfig() ListConfigResponse {
 		Executes:    executes,
 		ExecQuits:   execQuits,
 		Delimiter:   cmd.Delimiter,
-		WithNth:     cmd.WithNth,
+		WithNth:     cmd.WithNth - 1,
 		HeaderLines: cmd.HeaderLines,
 		Cycle:       cmd.Cycle,
 	}
