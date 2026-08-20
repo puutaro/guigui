@@ -10,32 +10,26 @@ import {
 
 export type ListComponentProps = {
     listConfig: list.ListConfigResponse | null;
-    listItems: string[];
-    setListItems: React.Dispatch<React.SetStateAction<string[]>>;
-    selectedIndex: number;
-    setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
-    searchQuery: string,
-    setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-    searchInputRef: React.RefObject<HTMLInputElement>;
     borderValue: number;
 }
 export const  ListComponent =
     ({
         listConfig,
-        listItems,
-        setListItems,
-        selectedIndex,
-        setSelectedIndex,
-        searchQuery,
-        setSearchQuery,
-        searchInputRef,
         borderValue,
    }: ListComponentProps
 ) => {
+
+        const searchInputRef = useRef<HTMLInputElement>(null);
+        const [listItems, setListItems] = useState<string[]>([]);
+        const [searchQuery, setSearchQuery] = useState("");
+        const [selectedIndex, setSelectedIndex] = useState(0);
         useEffect(() => {
           setSelectedIndex(headerLines);
-        }, [searchQuery, listItems]);
+        }, [searchQuery, listConfig?.list, listItems]);
 
+        useEffect(() => {
+            setListItems(listConfig?.list ?? []);
+        }, [listConfig?.list]);
         // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
         const headerLines = listConfig?.headerLines ?? 0;
         const headerItems = listItems.slice(0, headerLines);
@@ -311,7 +305,7 @@ export const  ListComponent =
                                         }}
                                         onDoubleClick={() => {
                                             if (isHeader) return
-                                            outputLineByExit(filteredListItems, selectedIndex);
+                                            outputLineByExit(filteredListItems, index);
                                         }}
                                         style={{
                                             padding: `${borderValue}px`,

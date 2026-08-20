@@ -13,16 +13,9 @@ import { ListComponent } from './list/ListComponent';
 function App() {
     useEscClose()
     const { viewType, setViewType } = useLoadConfig();
-    
     const [listConfig, setListConfig] = useState<list.ListConfigResponse | null>(null);
-    // リスト設定内の reloads 情報を保持するRef（固定値のためステート不要）
-
     // フォーム設定を保持するステート
     const [formConfig, setFormConfig] = useState<form.FormConfigResponse | null>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const [listItems, setListItems] = useState<string[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedIndex, setSelectedIndex] = useState(0);
 
     // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
@@ -39,11 +32,8 @@ function App() {
           break;
           case (viewType === VIEW_MODES.LIST): {
             GetListConfig()
-              .then((res) =>{ 
-                setListItems(res.list)
-                if(res.reloads){
+              .then((res) =>{
                   setListConfig(res)
-                }
             }).catch((err) =>{
                     console.error("Failed to load form config:", err);
             })
@@ -84,13 +74,6 @@ function App() {
        {viewType === VIEW_MODES.LIST && (
            <ListComponent
                listConfig={listConfig}
-               listItems={listItems}
-               setListItems={setListItems}
-               selectedIndex={selectedIndex}
-               setSelectedIndex={setSelectedIndex}
-               searchQuery={searchQuery}
-               setSearchQuery={setSearchQuery}
-               searchInputRef={searchInputRef}
                borderValue={borderValue}
            />
         )}
