@@ -118,9 +118,18 @@ func (a *App) RunReloadCmdForList(cmdStr, line, delimiter string) (string, error
 	}
 	return strings.TrimSuffix(stdoutBuf.String(), "\n"), nil
 }
-func (a *App) RunlCmdForList(cmdStr, line, delimiter string) error {
+func (a *App) RunCmdForList(cmdStr, line, delimiter string) error {
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
 	return a.RunCmd(replacedCmdStr)
+}
+
+func (a *App) RunCmdByQuitForList(cmdStr, line, delimiter string, exitCode int) {
+	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
+	err := a.RunCmd(replacedCmdStr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "command failed: %v", err)
+	}
+	a.ExitWithNumber(exitCode)
 }
 
 func (a *App) replaceHolder(cmdStr, line, delimiter string) string {

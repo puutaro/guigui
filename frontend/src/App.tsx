@@ -10,7 +10,8 @@ import {
   GetListConfig, 
   ExitWithNumber, 
   RunReloadCmdForList, 
-  RunlCmdForList,
+  RunCmdForList,
+  RunCmdByQuitForList,
   WriteStderr,
  } from '../wailsjs/go/main/App';
 import { form, list } from '../wailsjs/go/models'
@@ -305,10 +306,24 @@ useEffect(() => {
                   if (matchedExecute) {
                     e.preventDefault();
                     const selectedItem = filteredListItems[selectedIndex];
-                    RunlCmdForList(
+                    RunCmdForList(
                       matchedExecute.shell,
                       selectedItem,
                       listConfig?.delimiter ?? "",
+                    );
+                    return
+                  }
+                  const matchedExecQuit = 
+                    listConfig?.execQuits.find(
+                      r => r.key.toLowerCase() === pressedKey);
+                  if (matchedExecQuit) {
+                    e.preventDefault();
+                    const selectedItem = filteredListItems[selectedIndex];
+                    RunCmdByQuitForList(
+                      matchedExecQuit.shell,
+                      selectedItem,
+                      listConfig?.delimiter ?? "",
+                      matchedExecQuit.exitCode,
                     );
                     return
                   }
