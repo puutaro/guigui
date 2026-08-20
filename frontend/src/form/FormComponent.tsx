@@ -41,6 +41,9 @@ export const  FormComponent = ({
       hasFocusedRef.current = true; // フラグを立てて2回目以降をブロック
       const target = firstFieldRef.current?.querySelector('input, select, button, [tabindex="0"]') as HTMLElement;
       target?.focus();
+      if (target instanceof HTMLInputElement) {
+         target.select();
+      }
     }, 100);
     return () => clearTimeout(timer);
   }, [formConfig]);

@@ -2,7 +2,6 @@ import wailsLogo from './assets/wails.png'
 import './App.css'
 import { useEffect, useState, useRef } from 'react';
 import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
-import { filterListItems } from './list/filer';
 import { useUndoRedo} from './form/hooks/useAndoRedo';
 import { useKeyboardShortcut} from './form/hooks/useFormKeyShortcut';
 import { 
@@ -39,38 +38,6 @@ function App() {
     const [listItems, setListItems] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
-
-    useEffect(() => {
-      if (viewType !== VIEW_MODES.LIST) return
-      setSelectedIndex(headerLines);
-    }, [searchQuery, listItems]);
-
-    // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
-    const headerLines = listConfig?.headerLines ?? 0;
-    const headerItems = viewType === VIEW_MODES.LIST ? listItems.slice(0, headerLines) : [];
-    const bodyItems = viewType === VIEW_MODES.LIST ? listItems.slice(headerLines) : [];
-    // 2. ボディ部分のみに検索クエリの絞り込みを適用
-    const filteredBodyItems = filterListItems(
-      bodyItems,
-      searchQuery, 
-      listConfig?.delimiter,
-      listConfig?.withNth,
-    )    
-    // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
-    const filteredListItems = [...headerItems, ...filteredBodyItems];
-    // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
-    useEffect(() => {
-      if (viewType !== VIEW_MODES.LIST) return
-      // 少しだけタイミングをずらすか、DOMの描画完了を待ってフォーカスする
-      requestAnimationFrame(() => {
-        const targetListElement = listItemRefs.current[selectedIndex];
-        if (!targetListElement) return
-        targetListElement.focus();
-      });
-    }, [selectedIndex, viewType, filteredListItems]);
-
-    // リスト用のDOM要素（li）を格納するための配列参照
-    const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     useKeyboardShortcut({
       onUndo: () => {
@@ -208,15 +175,13 @@ function App() {
        {viewType === VIEW_MODES.LIST && (
            <ListComponent
                listConfig={listConfig}
+               listItems={listItems}
                setListItems={setListItems}
-               listItemRefs={listItemRefs}
-               filteredListItems={filteredListItems}
                selectedIndex={selectedIndex}
                setSelectedIndex={setSelectedIndex}
                searchQuery={searchQuery}
                setSearchQuery={setSearchQuery}
                searchInputRef={searchInputRef}
-               headerLines={headerLines}
                borderValue={borderValue}
            />
         )}
