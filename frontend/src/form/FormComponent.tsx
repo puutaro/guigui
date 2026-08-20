@@ -1,41 +1,102 @@
 import { form } from '../../wailsjs/go/models';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { DirSelectField } from '../form/editor/dirSelectField';
 import { FileSelectField } from '../form/editor/fileSelectField';
 import { NumEditField } from '../form/editor/numEditField';
 import { BtnField } from '../form/editor/btnField';
 import { BottomButton } from '../form/bottomButton/bottomButton';
 import { handleButtonClick } from './handleBottonClick';
+import { useUndoRedo} from './hooks/useAndoRedo';
+import { useKeyboardShortcut} from './hooks/useFormKeyShortcut';
+
 
 // 親から受け取るpropsの型定義
 export type FormComponentProps = {
   formConfig: form.FormConfigResponse | null;
-  formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>;
-  formValues: Record<string, string>;
-  formValuesRef: React.MutableRefObject<Record<string, string>>,
-  setFieldValue: (key: string, value: string) => void;
-  isAltPressed: boolean;
-  isAltPressedRef: React.MutableRefObject<boolean>;
-  IsCtrlPressedRef: React.MutableRefObject<boolean>;
   borderValue: number;
 }
 
 export const  FormComponent = ({
   formConfig,
-  formConfigRef,
-  formValues,
-  formValuesRef,
-  setFieldValue,
-  isAltPressed ,
-  isAltPressedRef,
-  IsCtrlPressedRef,
    borderValue,
   }: FormComponentProps
 ) => {
-  const firstFieldRef = useRef<HTMLDivElement | null>(null);
-  const hasFocusedRef = useRef(false); // ★ 初回実行済みフラグ
-  // フォームが最初に描画されたときの1回だけ実行
-  useEffect(() => {
+
+    // Altキーが押されているかどうかを管理するステート
+  const [isAltPressed, setIsAltPressed] = useState(false);
+    // 1. undo/redo フックでフォーム全体の値を管理（初期値は空のオブジェクト）
+    const {
+        state: formValues,
+        set: setFormValues,
+        setFieldValue,
+        undo,
+        redo,
+        canUndo,
+        canRedo
+    } = useUndoRedo<Record<string, string>>({});
+
+    useKeyboardShortcut({
+        onUndo: () => {
+            if (canUndo) undo();
+        },
+        onRedo: () => {
+            if (canRedo) redo();
+        },
+    });
+
+    const isAltPressedRef = useRef(false);
+    const isCtrlPressedRef = useRef(false);
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            switch (e.key){
+                case 'Alt':
+                    isAltPressedRef.current = true;
+                    setIsAltPressed(true);
+                    break;
+                case 'Control':
+                    isCtrlPressedRef.current = true;
+                    break;
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            switch (e.key){
+                case 'Alt':
+                    isAltPressedRef.current = false;
+                    setIsAltPressed(false);
+                    break;
+                case 'Control':
+                    isCtrlPressedRef.current = false;
+                    break;
+            }
+        };
+
+        // ウィンドウのフォーカスが外れたときなどのためにAltキーの状態をリセット
+        const handleBlur = () => {
+            isAltPressedRef.current = false;
+            setIsAltPressed(false);
+            isCtrlPressedRef.current = false;
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, []);
+    const formConfigRef = useRef(formConfig);
+    const formValuesRef = useRef(formValues);
+    useEffect(() => {
+     formConfigRef.current = formConfig;
+      formValuesRef.current = formValues;
+    }, [formConfig, formValues]);
+
+    const firstFieldRef = useRef<HTMLDivElement | null>(null);
+    const hasFocusedRef = useRef(false); // ★ 初回実行済みフラグ
+    // フォームが最初に描画されたときの1回だけ実行
+    useEffect(() => {
     if (!formConfig || hasFocusedRef.current) return;
     const timer = setTimeout(() => {
       hasFocusedRef.current = true; // フラグを立てて2回目以降をブロック
@@ -46,7 +107,18 @@ export const  FormComponent = ({
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [formConfig]);
+    }, [formConfig]);
+
+    // 取得したデフォルト値を初期値としてフォームの値ステートにセットする
+    const initialValues: Record<string, string> = {};
+    formConfig?.fields.forEach((field, index) => {
+        const key =  `${index}_${field.label}`;
+        initialValues[key] = field.defaultValue || "";
+    });
+    useEffect(() => {
+        setFormValues(initialValues);
+    }, []);
+
     const firstFocusableIndex = formConfig?.fields.findIndex(field => 'LBL' != field.type) ?? -1;
     const isExecutingRef = useRef(false);
     return (
@@ -81,7 +153,7 @@ export const  FormComponent = ({
                 }
               }
               // 2. Ctrl + Enter ショートカットの判定
-              const isCtrlActive = e.ctrlKey || IsCtrlPressedRef.current;
+              const isCtrlActive = e.ctrlKey || isCtrlPressedRef.current;
               if (isCtrlActive && e.key === 'Enter') {
                 const pressedKey = 'o';
                 const targetButton = currentConfig.buttons.find(btn => {

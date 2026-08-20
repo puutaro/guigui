@@ -1,6 +1,5 @@
 import { form } from '../../wailsjs/go/models';
-import { useRef } from 'react';
-import { 
+import {
   WriteStdout, 
   ExitWithNumber, 
  } from '../../wailsjs/go/main/App';
