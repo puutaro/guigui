@@ -59,9 +59,63 @@ function App() {
     const headerItems = viewType === VIEW_MODES.LIST ? listItems.slice(0, headerLines) : [];
     const bodyItems = viewType === VIEW_MODES.LIST ? listItems.slice(headerLines) : [];
     // 2. ボディ部分のみに検索クエリの絞り込みを適用
-    const filteredBodyItems = bodyItems.filter((item) =>
-      item.toLowerCase().includes(searchQuery.toLowerCase())
+    let filteredBodyItems = bodyItems; 
+    if (searchQuery.length > 0) {
+      let delimiter = "";
+      if(
+        (listConfig?.delimiter && listConfig.delimiter.length > 0)
+      ){
+        delimiter = listConfig.delimiter
+      }
+      let withNth = 0;
+      if(
+        (listConfig?.withNth && listConfig.withNth > 0)
+      ){
+        withNth = listConfig.withNth
+      }
+    const lowerSQuery = searchQuery.toLowerCase();
+    filteredBodyItems = bodyItems.filter((item) =>{
+      let searchItem = item
+      if(
+        withNth > 0 &&
+        delimiter.length > 0
+      ){
+        searchItem = item.split(delimiter)[withNth] ?? item
+      }
+      let curIndex = -1;
+      for (const  char of lowerSQuery) {
+        const charIndex = searchItem.toLowerCase().indexOf(char, curIndex + 1);
+        if(charIndex <= curIndex  || charIndex === -1){
+          return false
+        }
+        curIndex = charIndex;
+      }
+      return true
+    }).map((item) => {
+      let searchItem = item
+      if(
+        withNth > 0 &&
+        delimiter.length > 0
+      ){
+        searchItem = item.split(delimiter)[withNth] ?? item
+      }
+      let curIndex = -1;
+      let point = 0;
+      for (const  char of lowerSQuery) {
+        const charIndex = searchItem.toLowerCase().indexOf(char, curIndex + 1);
+        if(curIndex !== -1){
+          point += charIndex - curIndex;
+        }
+        curIndex = charIndex;
+      }
+      return {
+          pointKey: point,
+          itemKey: item,
+        }
+    }).sort((p1, p2) => p1.pointKey - p2.pointKey)
+    .map(obj => obj.itemKey
     );
+  }
 
     // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
     const filteredListItems = [...headerItems, ...filteredBodyItems];
@@ -168,7 +222,7 @@ const handleButtonClick = async (btn: form.ButtonDef): Promise<void> => {
           return rawValue;
         } catch (err: any) {
           // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
-          console.log(`Exception at index ${index}: ${err?.message || err}`);
+          console.log(`Excenptio at index ${index}: ${err?.message || err}`);
           return "";
         }
       })
@@ -232,7 +286,8 @@ useEffect(() => {
 
     // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
-        if (viewType === VIEW_MODES.FORM) {
+        switch (true){ 
+          case (viewType === VIEW_MODES.FORM): {
             GetFormConfig()
                 .then((res) => {
                     setFormConfig(res);
@@ -247,7 +302,9 @@ useEffect(() => {
                 .catch((err) => {
                     console.error("Failed to load form config:", err);
                 });
-        } else if (viewType === VIEW_MODES.LIST) {
+          } 
+          break;
+          case (viewType === VIEW_MODES.LIST): {
             GetListConfig()
               .then((res) =>{ 
                 setListItems(res.list)
@@ -258,20 +315,41 @@ useEffect(() => {
             }).catch((err) =>{
                     console.error("Failed to load form config:", err);
             })
-
-        }
+          }
+          break;
+      }
     }, [viewType]);
 
-    const borderValue = formConfig?.borders ?? 0;
-    const fontSizeInt = formConfig?.fontSize ? formConfig.fontSize : 10;
+    let borderValue = 0;
+    let fontSizeInt = 10;
+    if (viewType === VIEW_MODES.FORM && formConfig) {
+      borderValue = formConfig.borders ?? 0;
+      fontSizeInt = formConfig.fontSize ?? 10;
+    } else if (viewType === VIEW_MODES.LIST && listConfig) {
+      borderValue = listConfig.borders ?? 0;
+      fontSizeInt = listConfig.fontSize ?? 10;
+    }
     const fontSizePx = `${fontSizeInt}px`;
+    const outputLineByExit = async(filteredListItems: string[], selectedIndex: number) => {
+    const selectedItem = filteredListItems[selectedIndex];
+    if (!selectedItem) return
+      try {
+        await WriteStdout(selectedItem);
+        await ExitWithNumber(0);
+      } catch (err) {
+        console.error("Failed to output selected item:", err);
+      }
+    };
 
     if (viewType === VIEW_MODES.LOADING) {
       return <div className="p-8 text-center">Loading...</div>;
     }
   return (
-    <div className="min-h-screen bg-white p-8 font-mono" 
-      style={{ fontSize: fontSizePx }}
+    <div className="min-h-screen bg-white font-mono" 
+      style={{ 
+          fontSize: fontSizePx,
+          padding: `${borderValue}px`,
+        }}
     >
       <div >
       {/* <div className="max-w-md mx-auto"> */}
@@ -289,7 +367,7 @@ useEffect(() => {
        {viewType === VIEW_MODES.LIST && (
           <div 
             id="list-view" 
-            className="flex flex-col gap-4 max-w-lg mx-auto"
+            className="flex flex-col"
             tabIndex={0}
             onKeyDown={(e) => {
                 const isAltActive = e.altKey;
@@ -381,16 +459,7 @@ useEffect(() => {
                 break;
                 case (e.key === 'Enter'): {
                   e.preventDefault();
-                  const selectedItem = filteredListItems[selectedIndex];
-                  if (!selectedItem) return
-                  (async () => {
-                    try {
-                      await WriteStdout(selectedItem);
-                      await ExitWithNumber(0);
-                    } catch (err) {
-                      console.error("Failed to output selected item:", err);
-                    }
-                  })();
+                  outputLineByExit(filteredListItems, selectedIndex);
                 }
                 break;
                 case (
@@ -428,9 +497,15 @@ useEffect(() => {
               }
             }}
           >
-            {listConfig?.title && (
-            <h1 className="text-2xl font-bold text-blue-900 mb-1">
-              {listConfig.title}
+            {listConfig?.text && (
+            <h1 
+              className="font-bold text-blue-900"
+              style={{ 
+                fontSize: "calc(1em * 110 / 100)",
+                padding: "calc(1em * 110 / 100)",
+              }}
+              >
+              {listConfig.text}
             </h1>
           )}
             <input
@@ -439,7 +514,7 @@ useEffect(() => {
               placeholder="Type to search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500"
+              className=" border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
               onKeyDown={(e) => {
                 if (
                   e.key === 'ArrowDown' || 
@@ -454,14 +529,19 @@ useEffect(() => {
                   }
                 }
               }}
+              style={{ 
+                padding: `${borderValue}px`,
+                margin: `calc(${borderValue}px /  2)`,
+              }}
             />
 
             {/* 絞り込み結果を表示するスクロールエリア */}
-            <div className="border border-gray-300 rounded p-2 max-h-[60vh] overflow-y-auto">
+            <div className="rounded max-h-[60vh] overflow-y-auto">
               {filteredListItems.length === 0 ? (
-                <p className="text-gray-500 p-2">No matching items.</p>
+                <p className="text-gray-500">No matching items.</p>
               ) : (
-                <ul className="flex flex-col gap-1">
+                <ul 
+                  className="flex flex-col">
                   {filteredListItems.map((item, index) => {
                     const isHeader = index < headerLines;
                     const delimiter = listConfig?.delimiter ?? "" 
@@ -473,18 +553,70 @@ useEffect(() => {
                       fields[targetField] :
                        item;
                     }
+                    let renderedContent: React.ReactNode = displayText;
+
+                    if (!isHeader && searchQuery.length > 0) {
+                      const lowerSQuery = searchQuery.toLowerCase();
+                      const lowerDisplayText = displayText.toLowerCase();
+                      
+                      const matchIndices: number[] = [];
+                      let curIndex = -1;
+                      let isMatched = true;
+
+                      for (const char of lowerSQuery) {
+                        const charIndex = lowerDisplayText.indexOf(char, curIndex + 1);
+                        if (charIndex <= curIndex || charIndex === -1) {
+                          isMatched = false;
+                          break;
+                        }
+                        matchIndices.push(charIndex);
+                        curIndex = charIndex;
+                      }
+
+                      if (isMatched && matchIndices.length > 0) {
+                        const parts: React.ReactNode[] = [];
+                        let lastIdx = 0;
+
+                        matchIndices.forEach((matchIdx, i) => {
+                          if (matchIdx > lastIdx) {
+                            parts.push(displayText.substring(lastIdx, matchIdx));
+                          }
+                          parts.push(
+                            <strong key={i} className="font-extrabold text-blue-600 bg-blue-50">
+                              {displayText.substring(matchIdx, matchIdx + 1)}
+                            </strong>
+                          );
+                          lastIdx = matchIdx + 1;
+                        });
+
+                        if (lastIdx < displayText.length) {
+                          parts.push(displayText.substring(lastIdx));
+                        }
+
+                        renderedContent = <>{parts}</>;
+                      }
+                    }
                     return (
                     <li 
                       key={index}
                       tabIndex={isHeader ? -1 : 0}
                       ref={(el) => (listItemRefs.current[index] = el)}
-                      className="p-2 hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border border-transparent focus:border-blue-400"
+                      className="hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border-transparent focus:border-blue-400"
                       onClick={() => {
+                        if(isHeader) return
                         setSelectedIndex(index);
                         listItemRefs.current[index]?.focus();
                       }}
+                      onDoubleClick={() => {
+                        if(isHeader) return
+                        outputLineByExit(filteredListItems, selectedIndex);
+                      }}
+                        style={{ 
+                          padding: `${borderValue}px`,
+                          margin: `calc(${borderValue}px /  2)`,
+                        }}
                     >
-                      {displayText}
+                      {renderedContent}
                     </li>);
                   })}
                 </ul>

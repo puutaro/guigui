@@ -35,7 +35,7 @@ func (c *ListCmd) GetWindowConfig() window.WindowOptions {
 }
 
 type ListConfigResponse struct {
-	Title       string          `json:"title"`
+	Text        string          `json:"text"`
 	List        []string        `json:"list"`
 	Borders     int             `json:"borders"`
 	FontSize    int             `json:"fontSize"`
@@ -71,7 +71,7 @@ func (cmd *ListCmd) GetListConfig() ListConfigResponse {
 		execQuits[i] = cmd.parseKeyExitShell(quitExecStr)
 	}
 	return ListConfigResponse{
-		Title:       cmd.Text,
+		Text:        cmd.Text,
 		List:        strings.Split(cmd.List, "\n"),
 		Borders:     cmd.Borders,
 		FontSize:    cmd.FontSize,

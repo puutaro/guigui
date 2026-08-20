@@ -41,9 +41,17 @@ export const  FormComponent = ({
     return (
         (
           <div id="form-view" className="flex flex-col h-[calc(100vh-4rem)]">
-            <h1 className="text-2xl font-bold text-blue-900 mb-4 flex-shrink-0">
+            {formConfig?.text && (
+            <h1 
+              className="font-bold text-blue-900 flex-shrink-0"
+              style={{ 
+                fontSize: "calc(1em * 110 / 100)",
+                padding: "calc(1em * 110 / 100)",
+              }}
+              >
               {formConfig?.text ?? ""}
             </h1>
+            )}
           {!formConfig ? (
               <div className="text-gray-500">Loading form...</div>
             ) : (
