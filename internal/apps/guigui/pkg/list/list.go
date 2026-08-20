@@ -9,7 +9,8 @@ import (
 )
 
 type ListCmd struct {
-	List        string   `arg:"--list" help:"string contents separated by newline"`
+	List string `arg:"positional,separate" help:"string contents separated by newline"`
+	// List        string   `arg:"--list" help:"string contents separated by newline"`
 	Reloads     []string `arg:"--reload,separate" help:"(alt/option)+key:shell reload list by shell stdout"`
 	Executes    []string `arg:"--execute,separate" help:"(alt/option)+key:exec shell by shell stdout"`
 	ExecQuits   []string `arg:"--exec-quit,separate" help:"(alt/option)+key:exit code:exec shell with exit by shell stdout"`

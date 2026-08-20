@@ -1,6 +1,11 @@
 package args
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-arg"
 
@@ -44,6 +49,23 @@ func Parse() (*AppConfig, error) {
 	case formCmd != nil:
 		windowConfig = formCmd.WindowOptions
 	case listCmd != nil:
+		stat, err := os.Stdin.Stat()
+		if err != nil || (stat.Mode()&os.ModeCharDevice) != 0 {
+			break
+		}
+		var lines []string
+		scanner := bufio.NewScanner(os.Stdin)
+		// スキャナーで1行ずつループして読み込む
+		for scanner.Scan() {
+			lines = append(lines, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("error reading stdin: %v\n", err)
+		}
+		// 読み込んだ行を改行で結合して格納する
+		if len(lines) > 0 {
+			args.List.List = strings.Join(lines, "\n")
+		}
 		windowConfig = listCmd.WindowOptions
 		cmdName = "list"
 	case alertCmd != nil:
