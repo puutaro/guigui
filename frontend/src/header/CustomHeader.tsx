@@ -1,11 +1,11 @@
-import React from 'react';
+import {memo} from 'react';
 
 export type CustomHeaderProps = {
     windowIcon: string,
     title: string,
 }
 
-export const CustomHeader = ({
+export const CustomHeader = memo( ({
                                  windowIcon,
                                  title,
                              }: CustomHeaderProps) => {
@@ -50,4 +50,4 @@ export const CustomHeader = ({
             </div>
         </div>
     );
-};
+});

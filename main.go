@@ -6,9 +6,12 @@ import (
 	"os"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
@@ -34,11 +37,21 @@ func main() {
 		appConfig,
 	)
 
+	windowIconBytes := image.LoadIconBytes(windowConfig.WindowIcon)
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title: windowConfig.Title,
 		Windows: &windows.Options{
-			DisableWindowIcon: true,
+			DisableWindowIcon: false,
+		},
+		Linux: &linux.Options{
+			Icon: windowIconBytes,
+		},
+		Mac: &mac.Options{
+			About: &mac.AboutInfo{
+				Title: windowConfig.Title,
+				Icon:  windowIconBytes,
+			},
 		},
 		Width:  windowConfig.Width,
 		Height: windowConfig.Height,
