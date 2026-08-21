@@ -153,7 +153,6 @@ export const  ListComponent =
             </div>
             {/* 絞り込み結果を表示するスクロールエリア */}
             <div
-                // className="flex-1 overflow-y-auto min-h-0 w-full"
                 className="flex-1 h-0 overflow-y-auto w-full"
             >
                 {headerAndFilteredBodyListItems.length === headerLines ? (
