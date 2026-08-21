@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/buttons"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
@@ -56,6 +57,8 @@ func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 
 // レスポンス用の構造体を定義（これなら型安全！）
 type FormConfigResponse struct {
+	WindowIcon    string      `json:"windowIcon"`
+	Title         string      `json:"title"`
 	Text          string      `json:"text"`
 	Borders       int         `json:"borders"`
 	FontSize      int         `json:"fontSize"`
@@ -77,13 +80,14 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		parsedFields = append(parsedFields, parsed)
 	}
 	var parsedButtons []ButtonDef
-	if !cmd.NoButtons {
+	isButton := !cmd.NoButtons
+	if isButton {
 		for _, raw := range cmd.Buttons {
 			parsed := parseButtonString(raw)
 			parsedButtons = append(parsedButtons, parsed)
 		}
 	}
-	if len(parsedButtons) == 0 {
+	if len(parsedButtons) == 0 && isButton {
 		parsedButtons = append(
 			parsedButtons,
 			ButtonDef{
@@ -94,7 +98,9 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 	}
 
 	return FormConfigResponse{
-		Text:          text.TextUnescapeNewlines(cmd.Text),
+		WindowIcon:    image.ImageToBase64(cmd.WindowIcon),
+		Title:         cmd.Title,
+		Text:          text.TextUnescapeNewlinesTab(cmd.Text),
 		Borders:       cmd.Borders,
 		FontSize:      cmd.FontSize,
 		ItemSeparator: cmd.ItemSeparator,
@@ -145,7 +151,7 @@ func parseFieldString(raw, fValue, itemSep string) FieldDef {
 	switch true {
 	case
 		fType == "LBL":
-		formLabel = text.TextUnescapeNewlines(
+		formLabel = text.TextUnescapeNewlinesTab(
 			decodeHtmlEntities(label),
 		)
 	default:

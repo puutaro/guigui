@@ -45,18 +45,59 @@ export const  FormComponent = ({
     });
 
     const isAltPressedRef = useRef(false);
-    const isCtrlPressedRef = useRef(false);
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            switch (e.key){
+            switch (e.key) {
                 case 'Alt':
                     isAltPressedRef.current = true;
                     setIsAltPressed(true);
                     break;
-                case 'Control':
-                    isCtrlPressedRef.current = true;
-                    break;
             }
+            const isAltActive = e.altKey || isAltPressedRef.current;
+            const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
+            const currentConfig = formConfigRef.current;
+            if (!currentConfig?.buttons) return;
+
+            // 1. Alt / Option ショートカットの判定（ボタン用）
+            if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
+                const pressedKey = e.code.replace('Key', '').toLowerCase();
+
+                const targetButton = currentConfig.buttons.find(btn => {
+                    if (!btn.label || btn.label.length === 0) return false;
+                    return btn.label.charAt(0).toLowerCase() === pressedKey;
+                });
+
+                if (targetButton) {
+                    e.preventDefault();
+                    handleButtonClick(
+                        formConfigRef,
+                        targetButton,
+                        formValuesRef,
+                        isExecutingRef,
+                    );
+                    return;
+                }
+            }
+            // 2. Ctrl + Enter ショートカットの判定
+            const isCtrlActive = e.ctrlKey;
+            if (isCtrlActive && e.key === 'Enter') {
+                const pressedKey = 'o';
+                const targetButton = currentConfig.buttons.find(btn => {
+                    const btnLabel = btn.label
+                    if (!btnLabel || btnLabel.length === 0) return false;
+                    return btnLabel.charAt(0).toLowerCase() === pressedKey;
+                });
+                if (targetButton) {
+                    e.preventDefault();
+                    handleButtonClick(
+                        formConfigRef,
+                        targetButton,
+                        formValuesRef,
+                        isExecutingRef,
+                    );
+                }
+            }
+
         };
 
         const handleKeyUp = (e: KeyboardEvent) => {
@@ -65,9 +106,6 @@ export const  FormComponent = ({
                     isAltPressedRef.current = false;
                     setIsAltPressed(false);
                     break;
-                case 'Control':
-                    isCtrlPressedRef.current = false;
-                    break;
             }
         };
 
@@ -75,7 +113,6 @@ export const  FormComponent = ({
         const handleBlur = () => {
             isAltPressedRef.current = false;
             setIsAltPressed(false);
-            isCtrlPressedRef.current = false;
         };
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
@@ -126,53 +163,6 @@ export const  FormComponent = ({
           <div 
             id="form-view" 
             className="flex flex-col h-[calc(100vh-4rem)]"
-            onKeyDown={(e) => {
-              const isAltActive = e.altKey || isAltPressedRef.current;
-              const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
-              const currentConfig = formConfigRef.current;
-              if (!currentConfig?.buttons) return;
-
-              // 1. Alt / Option ショートカットの判定（ボタン用）
-              if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
-                const pressedKey = e.code.replace('Key', '').toLowerCase();
-
-                const targetButton = currentConfig.buttons.find(btn => {
-                  if (!btn.label || btn.label.length === 0) return false;
-                  return btn.label.charAt(0).toLowerCase() === pressedKey;
-                });
-
-                if (targetButton) {
-                  e.preventDefault();
-                  handleButtonClick(
-                      formConfigRef,
-                      targetButton,
-                      formValuesRef,
-                      isExecutingRef,
-                  );
-                  return;
-                }
-              }
-              // 2. Ctrl + Enter ショートカットの判定
-              const isCtrlActive = e.ctrlKey || isCtrlPressedRef.current;
-              if (isCtrlActive && e.key === 'Enter') {
-                const pressedKey = 'o';
-                const targetButton = currentConfig.buttons.find(btn => {
-                  const btnLabel = btn.label
-                  if (!btnLabel || btnLabel.length === 0) return false;
-                  return btnLabel.charAt(0).toLowerCase() === pressedKey;
-                });
-                if (targetButton) {
-                  e.preventDefault();
-                  handleButtonClick(
-                      formConfigRef,
-                      targetButton,
-                      formValuesRef,
-                      isExecutingRef,
-                  );
-                }
-              }
-            }
-          }
           >
             {formConfig?.text && (
             <h1 

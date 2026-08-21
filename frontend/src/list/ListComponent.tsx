@@ -69,12 +69,19 @@ export const  ListComponent =
             targetListElement.focus();
           });
         }, [selectedIndex, filteredBodyItemObjs]);
+        // const heightValue = (() => {
+        //     100 - 100 * ( borderValue / 100 )
+        //     return borderValue
+        // })()
+        // const maxHeightClass = `max-h-[${heightValue}vh]`;
             return (
             <div
                 id="list-view"
                 // className="flex flex-col h-full overflow-hidden w-full"
                 className="flex flex-col h-screen overflow-hidden w-full" // ★ h-full を h-screen に変更してみる
-                style={{ overscrollBehavior: 'none' }}
+                style={{
+                    overscrollBehavior: 'none' ,
+                }}
                 tabIndex={0}
                 onKeyDown={(e) => {
                     onKeyDown(
@@ -100,7 +107,7 @@ export const  ListComponent =
             >
                 {listConfig?.text && (
                     <h1
-                        className="font-bold text-blue-900"
+                        className="font-bold text-blue-900  whitespace-pre-wrap"
                         style={{
                             fontSize: "calc(1em * 110 / 100)",
                             padding: "calc(1em * 110 / 100)",
@@ -135,9 +142,19 @@ export const  ListComponent =
                     />
                 )}
             </div>
+            <div
+                className="flex-1 h-0 w-full flex flex-col"
+                style={{
+                    marginBottom: `calc(${borderValue}px * 2)`, // ★ ここでスクロールエリアの下側に確実にマージンが取れます
+                }}
+            >
             {/* 絞り込み結果を表示するスクロールエリア */}
             <div
                 className="flex-1 h-0 overflow-y-auto w-full"
+                style={{
+                    // ここでスクロールエリア自体の下側にマージンを取る
+                    marginBottom: `${borderValue}px`,
+                }}
             >
                 {headerAndFilteredBodyListItems.length === headerLines ? (
                     <p className="text-gray-500">No matching items.</p>
@@ -151,6 +168,7 @@ export const  ListComponent =
                     />
                 )}
             </div>
+        </div>
         </div>
     )
 }

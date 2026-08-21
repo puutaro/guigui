@@ -5,6 +5,7 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "icon": "build/appicon.png",
   "author": {
     "name": "puutaro",
     "email": "hoperstep@gmail.com"

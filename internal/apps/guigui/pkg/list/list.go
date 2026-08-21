@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
@@ -36,6 +38,8 @@ func (c *ListCmd) GetWindowConfig() window.WindowOptions {
 }
 
 type ListConfigResponse struct {
+	WindowIcon  string          `json:"windowIcon"`
+	Title       string          `json:"title"`
 	Text        string          `json:"text"`
 	List        []string        `json:"list"`
 	Borders     int             `json:"borders"`
@@ -72,7 +76,9 @@ func (cmd *ListCmd) GetListConfig() ListConfigResponse {
 		execQuits[i] = cmd.parseKeyExitShell(quitExecStr)
 	}
 	return ListConfigResponse{
-		Text:        cmd.Text,
+		WindowIcon:  image.ImageToBase64(cmd.WindowIcon),
+		Title:       cmd.Title,
+		Text:        text.TextUnescapeNewlinesTab(cmd.Text),
 		List:        strings.Split(cmd.List, "\n"),
 		Borders:     cmd.Borders,
 		FontSize:    cmd.FontSize,
