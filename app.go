@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -95,8 +96,11 @@ func (a *App) SelectDir(title string) (string, error) {
 	return dirPath, err
 }
 func (a *App) RunCmd(cmdStr string) error {
+	return a.execRunCmd(cmdStr, io.Discard)
+}
+func (a *App) execRunCmd(cmdStr string, w io.Writer) error {
 	cmd := exec.Command("bash", "-c", cmdStr)
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = w
 	cmd.Stderr = os.Stderr
 	// コマンドを実行
 	err := cmd.Run()
@@ -120,12 +124,12 @@ func (a *App) RunReloadCmdForList(cmdStr, line, delimiter string) (string, error
 }
 func (a *App) RunCmdForList(cmdStr, line, delimiter string) error {
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
-	return a.RunCmd(replacedCmdStr)
+	return a.execRunCmd(replacedCmdStr, io.Discard)
 }
 
 func (a *App) RunCmdByQuitForList(cmdStr, line, delimiter string, exitCode int) {
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
-	err := a.RunCmd(replacedCmdStr)
+	err := a.execRunCmd(replacedCmdStr, io.Discard)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "command failed: %v", err)
 	}

@@ -1,10 +1,10 @@
 import { form } from '../../wailsjs/go/models';
 import { useEffect, useState, useRef } from 'react';
-import { DirSelectField } from '../form/editor/dirSelectField';
-import { FileSelectField } from '../form/editor/fileSelectField';
-import { NumEditField } from '../form/editor/numEditField';
-import { BtnField } from '../form/editor/btnField';
-import { BottomButton } from '../form/bottomButton/bottomButton';
+import { DirSelectField } from './editor/dirSelectField';
+import { FileSelectField } from './editor/fileSelectField';
+import { NumEditField } from './editor/numEditField';
+import { BtnField } from './editor/btnField';
+import { BottomButton } from './bottomButton/bottomButton';
 import { handleButtonClick } from './handleBottonClick';
 import { useUndoRedo} from './hooks/useAndoRedo';
 import { useKeyboardShortcut} from './hooks/useFormKeyShortcut';

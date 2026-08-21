@@ -134,7 +134,7 @@ export const  ListComponent =
                     }}
                 />
                 {/* 絞り込み結果を表示するスクロールエリア */}
-                <div className="rounded max-h-[60vh] overflow-y-auto">
+                <div className="rounded overflow-y-auto">
                     {headerAndFilteredBodyListItems.length === 0 ? (
                         <p className="text-gray-500">No matching items.</p>
                     ) : (
