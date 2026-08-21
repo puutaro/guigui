@@ -117,25 +117,9 @@ export const  ListComponent =
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className=" border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
-                        switch (true){
-                            case (e.key === 'ArrowDown'): {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                if (headerAndFilteredBodyListItems.length > 0) {
-                                    const bodyStartIndex = headerLines;
-                                    // 確実に一番最初の行（インデックス 0、またはヘッダー考慮なら適切な開始位置）へ
-                                    setSelectedIndex(bodyStartIndex);
-                                    listItemRefs.current[bodyStartIndex]?.focus();
-                                }
-                            }
-                            break;
-                            case (e.key === 'ArrowUp'): {
-                                e.preventDefault();
-                                e.stopPropagation();
-                            }
-                            break;
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                            e.preventDefault();
                         }
-
                     }}
                     style={{
                         padding: `${borderValue}px`,

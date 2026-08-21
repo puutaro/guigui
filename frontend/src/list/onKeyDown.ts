@@ -77,6 +77,9 @@ export const onKeyDown = (
             setSelectedIndex((prev) => {
                 // ボディ部分が存在しない場合はそのまま
                 if (filteredListItems.length <= headerLines) return prev;
+                if (document.activeElement === searchInputRef.current || prev < headerLines) {
+                    return headerLines;
+                }
                 if (prev < filteredListItems.length - 1) {
                     return prev + 1;
                 } else {
