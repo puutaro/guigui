@@ -100,14 +100,6 @@ export const onKeyDown = (
             });
         }
             break;
-        // case (e.key === 'Enter'): {
-        //     e.preventDefault()
-        //     outputLineBySelectedIndexByExit(
-        //         filteredListItems,
-        //         selectedIndex,
-        //         );
-        // }
-        //     break;
         case (
             (e.key.length === 1
                 && !e.ctrlKey

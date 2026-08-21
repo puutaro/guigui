@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { list } from '../../wailsjs/go/models'
 import { filterListItemObjs } from './filer';
 import {onKeyDown} from "./onKeyDown";
@@ -32,7 +32,11 @@ export const  ListComponent =
         // 2. ボディ部分のみに検索クエリの絞り込みを適用
         const delimiter = listConfig?.delimiter ?? ""
         const withNth = listConfig?.withNth ?? -1
-        const headerItems = listItems.slice(0, headerLines);
+        const headerItems = useMemo(
+            () => {
+            return listItems.slice(0, headerLines)},
+            [listConfig?.list, listItems]
+        )
         const headerItemObjs = headerItems.map((line) => {
             return {
                 lineKey: line,
@@ -40,12 +44,14 @@ export const  ListComponent =
                 matchedIndex: [],
             }
         })
-        const filteredBodyItemObjs = filterListItemObjs(
-          bodyItems,
-          searchQuery,
-          delimiter,
-          withNth,
-        )
+        const filteredBodyItemObjs = useMemo(
+            () => {
+               return filterListItemObjs(
+                  bodyItems,
+                  searchQuery,
+                  delimiter,
+                  withNth,
+                )}, [searchQuery, listConfig?.list, listItems])
         // 3. ヘッダーと絞り込み済みのボディを常に結合したものを表示用リストとする
         const filteredBodyItems = filteredBodyItemObjs.map((obj) => {
            return obj.lineKey
