@@ -4,6 +4,7 @@ import { filterListItemObjs } from './filer';
 import {onKeyDown} from "./onKeyDown";
 import {FilterDisplay} from "./FilterDisplay";
 import {makeDisplayText} from "./libs/makeDisplayText";
+import {HeaderDisplay} from "./HeaderDisplay";
 
 export type ListComponentProps = {
     listConfig: list.ListConfigResponse | null;
@@ -69,29 +70,34 @@ export const  ListComponent =
           });
         }, [selectedIndex, filteredBodyItemObjs]);
             return (
-                <div
-                    id="list-view"
-                    className="flex flex-col"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                        onKeyDown(
-                            e,
-                            setListItems,
-                            selectedIndex,
-                            headerAndFilteredBodyListItems,
-                            setSelectedIndex,
-                            setSearchQuery,
-                            searchInputRef,
-                            listConfig?.executes ?? [],
-                            listConfig?.execQuits ?? [],
-                            listConfig?.reloads ?? [],
-                            listConfig?.delimiter || "",
-                            headerLines,
-                            listConfig?.cycle ?? false,
-                        )
-                    }
-                    }
-                >
+            <div
+                id="list-view"
+                // className="flex flex-col h-full overflow-hidden w-full"
+                className="flex flex-col h-screen overflow-hidden w-full" // ★ h-full を h-screen に変更してみる
+                style={{ overscrollBehavior: 'none' }}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    onKeyDown(
+                        e,
+                        setListItems,
+                        selectedIndex,
+                        headerAndFilteredBodyListItems,
+                        setSelectedIndex,
+                        setSearchQuery,
+                        searchInputRef,
+                        listConfig?.executes ?? [],
+                        listConfig?.execQuits ?? [],
+                        listConfig?.reloads ?? [],
+                        listConfig?.delimiter || "",
+                        headerLines,
+                        listConfig?.cycle ?? false,
+                    )
+                }
+                }
+            >
+            <div
+                className="flex-shrink-0 bg-white z-10 w-full flex flex-col box-border"
+            >
                 {listConfig?.text && (
                     <h1
                         className="font-bold text-blue-900"
@@ -112,17 +118,20 @@ export const  ListComponent =
                     className=" border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
                         switch (true){
-                            case (
-                                e.key === 'ArrowDown' ||
-                                e.key === 'ArrowUp'
-                            ): {
+                            case (e.key === 'ArrowDown'): {
                                 e.preventDefault();
-                                const bodyStartIndex = headerLines;
-                                if (headerAndFilteredBodyListItems.length > bodyStartIndex) {
-                                    // 最初のデータ行（ボディの先頭）にフォーカスを当てる
+                                e.stopPropagation();
+                                if (headerAndFilteredBodyListItems.length > 0) {
+                                    const bodyStartIndex = headerLines;
+                                    // 確実に一番最初の行（インデックス 0、またはヘッダー考慮なら適切な開始位置）へ
                                     setSelectedIndex(bodyStartIndex);
                                     listItemRefs.current[bodyStartIndex]?.focus();
                                 }
+                            }
+                            break;
+                            case (e.key === 'ArrowUp'): {
+                                e.preventDefault();
+                                e.stopPropagation();
                             }
                             break;
                         }
@@ -133,20 +142,32 @@ export const  ListComponent =
                         margin: `calc(${borderValue}px /  2)`,
                     }}
                 />
-                {/* 絞り込み結果を表示するスクロールエリア */}
-                <div className="rounded overflow-y-auto">
-                    {headerAndFilteredBodyListItems.length === 0 ? (
-                        <p className="text-gray-500">No matching items.</p>
-                    ) : (
-                        <FilterDisplay
-                            listItemRefs={listItemRefs}
-                            headerItemObjs={headerItemObjs}
-                            filterItemOpjs={filteredBodyItemObjs}
-                            setSelectedIndex={setSelectedIndex}
-                            borderValue={borderValue}
-                        />
-                    )}
-                </div>
+                {/* リストのヘッダー行もここで一緒に固定描画 */}
+                {headerItemObjs.length > 0 && (
+                    <HeaderDisplay
+                        listItemRefs={listItemRefs}
+                        headerItemObjs={headerItemObjs}
+                        borderValue={borderValue}
+                    />
+                )}
             </div>
-        )
+            {/* 絞り込み結果を表示するスクロールエリア */}
+            <div
+                // className="flex-1 overflow-y-auto min-h-0 w-full"
+                className="flex-1 h-0 overflow-y-auto w-full"
+            >
+                {headerAndFilteredBodyListItems.length === headerLines ? (
+                    <p className="text-gray-500">No matching items.</p>
+                ) : (
+                    <FilterDisplay
+                        listItemRefs={listItemRefs}
+                        filterItemOpjs={filteredBodyItemObjs}
+                        setSelectedIndex={setSelectedIndex}
+                        borderValue={borderValue}
+                        headerLines={headerLines}
+                    />
+                )}
+            </div>
+        </div>
+    )
 }

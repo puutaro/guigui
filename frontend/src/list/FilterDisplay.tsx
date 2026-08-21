@@ -2,11 +2,6 @@ import {outputLineByExit} from "./libs/outputLineByExit";
 
 export type FilterDisplayProps = {
     listItemRefs:  React.MutableRefObject<(HTMLLIElement | null)[]>;
-    headerItemObjs: {
-        lineKey: string
-        nthKey: string
-        matchedIndex: number[]
-    }[],
     filterItemOpjs: {
         lineKey: string
         nthKey: string
@@ -14,26 +9,20 @@ export type FilterDisplayProps = {
     }[],
     setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
     borderValue: number;
+    headerLines: number; // ★ ヘッダー行数を追加
 }
 
 export const FilterDisplay = (
     {
         listItemRefs,
         filterItemOpjs,
-        headerItemObjs,
         setSelectedIndex,
         borderValue,
+        headerLines,
     }: FilterDisplayProps
 ) => {
-    const headerRenderedObjList = headerItemObjs.map((obj) => {
-        return {
-            renderedContent: obj.nthKey,
-            lineKey: obj.lineKey,
-            isHeader: true,
-        }
-    })
-    const bodyRenderedObjList = filterItemOpjs.map(
-        (obj) => {
+    // ボディ用の描画オブジェクトリスト
+    const bodyRenderedObjList = filterItemOpjs.map((obj) => {
         let displayText = obj.nthKey
         let renderedContent: React.ReactNode = displayText;
         let matchIndices = obj.matchedIndex
@@ -42,7 +31,7 @@ export const FilterDisplay = (
             renderedContent: renderedContent,
             lineKey: obj.lineKey,
             isHeader: isNotHedder,
-        } ;
+        };
         const parts: React.ReactNode[] = [];
         let lastIdx = 0;
         matchIndices.forEach((matchIdx, i) => {
@@ -66,43 +55,42 @@ export const FilterDisplay = (
             lineKey: obj.lineKey,
             isHeader: isNotHedder,
         }
-    })
+    });
+
     return (
-        <ul
-        className="flex flex-col">
-        {[...headerRenderedObjList, ...bodyRenderedObjList].map((obj, index) => {
-            const isHeader = obj.isHeader;
-            return (
-                <li
-                    key={index}
-                    tabIndex={isHeader ? -1 : 0}
-                    ref={(el) => (listItemRefs.current[index] = el)}
-                    className="hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border-transparent focus:border-blue-400"
-                    onClick={() => {
-                        if (isHeader) return
-                        setSelectedIndex(index);
-                        listItemRefs.current[index]?.focus();
-                    }}
-                    onDoubleClick={() => {
-                        if (isHeader) return
-                        outputLineByExit(obj.lineKey ?? "");
-                    }}
-                    onKeyDown={(e)=>{
-                        if(isHeader) return
-                        if (e.key !== 'Enter') return
-                        e.preventDefault()
-                        outputLineByExit(
-                            obj.lineKey ?? "",
-                       );
-                    }}
-                    style={{
-                        padding: `${borderValue}px`,
-                        margin: `calc(${borderValue}px /  2)`,
-                    }}
-                >
-                    {obj.renderedContent}
-                </li>);
-        })}
-    </ul>
+            <ul className="flex flex-col">
+                {bodyRenderedObjList.map((obj, bodyIndex) => {
+                    // 全体でのインデックス（headerLines分をオフセット）
+                    const actualIndex = headerLines + bodyIndex;
+                    const isHeader = obj.isHeader;
+
+                    return (
+                        <li
+                            key={`body-${bodyIndex}`}
+                            tabIndex={0}
+                            ref={(el) => (listItemRefs.current[actualIndex] = el)}
+                            className="hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border-transparent focus:border-blue-400"
+                            onClick={() => {
+                                setSelectedIndex(actualIndex);
+                                listItemRefs.current[actualIndex]?.focus();
+                            }}
+                            onDoubleClick={() => {
+                                outputLineByExit(obj.lineKey ?? "");
+                            }}
+                            onKeyDown={(e)=>{
+                                if (e.key !== 'Enter') return
+                                e.preventDefault()
+                                outputLineByExit(obj.lineKey ?? "");
+                            }}
+                            style={{
+                                padding: `${borderValue}px`,
+                                margin: `calc(${borderValue}px /  2)`,
+                            }}
+                        >
+                            {obj.renderedContent}
+                        </li>
+                    );
+                })}
+            </ul>
     )
 }
