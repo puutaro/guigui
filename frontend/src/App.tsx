@@ -22,7 +22,7 @@ function App() {
         useState<{title: string, windowIcon: string}>({title: "", windowIcon: ""});
     useEffect(() => {
         // Go側から "json-data-loaded" イベントが飛んできたら実行される
-        const unsubscribe = EventsOn("req", (data: network.GuiRequest) => {
+        const unsubscribe = EventsOn("req", (data: network.GuiRequestForWebview) => {
             try {
                 switch (data.viewMode) {
                     case VIEW_MODES.FORM: {

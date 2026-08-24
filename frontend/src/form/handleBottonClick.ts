@@ -1,8 +1,8 @@
 import { form } from '../../wailsjs/go/models';
 import {
-  WriteStdout, 
-  ExitWithNumber, 
- } from '../../wailsjs/go/main/App';
+    ExitWithNumber,
+} from '../../wailsjs/go/main/App';
+import {ExitByHidden, WriteStdoutAndExitByHidden} from "../exit/exit";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -18,7 +18,7 @@ export const handleButtonClick = async (
     }
     isExecutingRef.current = true;
     if (btn.exitCode == 1){
-      await ExitWithNumber(btn.exitCode);
+      await ExitByHidden(btn.exitCode);
       return
     }
     
@@ -39,9 +39,7 @@ export const handleButtonClick = async (
         try {
           const label = field.label;
           const key = `${index}_${label}`;
-          const rawValue = currentValues[key] ?? field.defaultValue ?? "";
-          console.log(`condole ${key}, ${rawValue}`);
-          return rawValue;
+          return currentValues[key] ?? field.defaultValue ?? "";
         } catch (err: any) {
           // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
           console.log(`Excenptio at index ${index}: ${err?.message || err}`);
@@ -49,6 +47,8 @@ export const handleButtonClick = async (
         }
       })
       .join(separator);
-    await WriteStdout(outputString);
-    await ExitWithNumber(btn.exitCode);
+    await WriteStdoutAndExitByHidden({
+        ExitCode: btn.exitCode,
+        Stdout: outputString,
+    });
   };

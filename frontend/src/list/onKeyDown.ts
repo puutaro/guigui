@@ -1,6 +1,7 @@
-import {RunCmdByQuitForList, RunCmdForList, RunReloadCmdForList} from "../../wailsjs/go/main/App";
+import {RunCmdAndExitForList, RunCmdForList, RunReloadCmdForList} from "../../wailsjs/go/main/App";
 import {list, network} from "../../wailsjs/go/models";
 import ExecuteConfig = list.ExecuteConfig;
+import {RunCmdAndExitForListByMinimise} from "../exit/exit";
 
 export const onKeyDown = (
     e: React.KeyboardEvent<HTMLDivElement>,
@@ -38,21 +39,17 @@ export const onKeyDown = (
             );
             return
         }
-        const matchedExecQuit =
+        const matchedExecHidden =
             execQuit?.find(
                 r => r.key.toLowerCase() === pressedKey);
-        if (matchedExecQuit) {
+        if (matchedExecHidden) {
             e.preventDefault();
             const selectedItem = filteredListItems[selectedIndex];
-            RunCmdByQuitForList(
-                matchedExecQuit.shell,
+            RunCmdAndExitForListByMinimise(
+                matchedExecHidden.shell,
                 selectedItem,
-                delimiter ?? "",
-                {
-                   ExitCode: matchedExecQuit.exitCode,
-                   DownGui: true,
-                   Stdout: "",
-                },
+                matchedExecHidden.exitCode,
+                delimiter,
             );
             return
         }

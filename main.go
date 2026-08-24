@@ -74,9 +74,9 @@ func main() {
 		}
 	}
 	if isGuiProcess {
-		sendRegToGui(appConfig)
+		sendReqToGui(appConfig)
 	}
-	serveGuiRes()
+	serveGuiRes(appConfig.IsQuitGui)
 }
 
 func startsGui(appConfig *args.AppConfig) error {
@@ -111,6 +111,7 @@ func startsGui(appConfig *args.AppConfig) error {
 		// BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		OnStartup:        app.startup,
+		OnBeforeClose:    app.sendAllQuitSignal,
 		Bind: []interface{}{
 			app,
 		},

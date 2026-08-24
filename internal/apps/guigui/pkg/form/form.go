@@ -2,7 +2,7 @@ package form
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"unicode"
@@ -42,7 +42,7 @@ type FormCmd struct {
 
 // KongのRun()からも接続できるようにする
 func (cmd *FormCmd) Run(ctx context.Context) error {
-	fmt.Println("Launching Wails window for form...")
+	log.Println("Launching Wails window for form...")
 	// ここで Wails のアプリケーションを起動する（wails.Run(...)）
 	return nil
 }

@@ -62,22 +62,25 @@ func (a *App) GetActiveMode() string {
 	return a.activeMode
 }
 func (a *App) ExitWith252() {
-	os.Exit(252)
+	network.GuiResponse{
+		ExitCode: 252,
+	}.SendResJson()
 }
 func (a *App) ExitWith1() {
-	os.Exit(1)
+	network.GuiResponse{
+		ExitCode: 1,
+	}.SendResJson()
 }
 func (a *App) ExitWithNumber(exitCode int) {
-	os.Exit(exitCode)
+	network.GuiResponse{
+		ExitCode: exitCode,
+	}.SendResJson()
 }
 func (a *App) WriteStdout(str string) {
 	fmt.Fprintln(os.Stdout, str)
 }
 func (a *App) WriteStdoutByHidden(res network.GuiResponse) {
-	// runtime.WindowHide(a.ctx)
-	runtime.WindowMinimise(a.ctx)
 	res.SendResJson()
-	// fmt.Fprintln(os.Stdout, str)
 }
 func (a *App) WriteStderr(str string) {
 	fmt.Fprintf(os.Stderr, "\x1b[31m%s\x1b[0m\n", str)
@@ -140,7 +143,7 @@ func (a *App) RunCmdForList(cmdStr, line, delimiter string) error {
 	return a.execRunCmd(replacedCmdStr, io.Discard)
 }
 
-func (a *App) RunCmdByQuitForList(
+func (a *App) RunCmdAndExitForList(
 	cmdStr,
 	line,
 	delimiter string,
@@ -152,8 +155,6 @@ func (a *App) RunCmdByQuitForList(
 		fmt.Fprintf(os.Stderr, "command failed: %v", err)
 	}
 	res.SendResJson()
-	// os.Exit(exitSuccess)
-	// a.ExitWithNumber(exitCode)
 }
 
 func (a *App) replaceHolder(cmdStr, line, delimiter string) string {
@@ -192,6 +193,13 @@ func (a *App) startup(ctx context.Context) {
 	go a.startGuiServer(
 		ctx,
 	)
+}
+
+func (a *App) sendAllQuitSignal(ctx context.Context) bool {
+	network.GuiResponse{
+		ExitCode: 1,
+	}.SendResJson()
+	return false
 }
 
 // domReady is called after front-end resources have been loaded

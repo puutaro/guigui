@@ -2,7 +2,7 @@ package guiproc
 
 import (
 	"bytes"
-	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"syscall"
@@ -13,7 +13,7 @@ import (
 func ExecGuiCmd(cmdArgs []string, appConfig *args.AppConfig) error {
 	selfPath, err := os.Executable()
 	if err != nil {
-		fmt.Printf("自身のパスの取得に失敗: %v\n", err)
+		log.Printf("failure to self executable path: %v\n", err)
 		return err
 	}
 	var srcArgs []string
@@ -46,7 +46,7 @@ func ExecGuiCmd(cmdArgs []string, appConfig *args.AppConfig) error {
 	}
 	// Start() でバックグラウンド起動（Waitはしない）
 	if err := cmd.Start(); err != nil {
-		fmt.Printf("failure to start child process: %v\n", err)
+		log.Printf("failure to start child process: %v\n", err)
 		return err
 	}
 	return nil

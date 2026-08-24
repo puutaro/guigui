@@ -5,7 +5,7 @@ import { GetActiveMode } from '../wailsjs/go/main/App';
 export function useEscClose() {
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
+            if (event.key === '') {
                 ExitWith252()
                 window.go.main.App.ExitWith252();
             }

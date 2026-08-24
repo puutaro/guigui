@@ -41,7 +41,9 @@ export const CustomHeader = memo( ({
             >
                 <button
                     onClick={() => {
-                        // 閉じる処理など
+                        (async() => {
+                            (window as any).runtime.Quit();
+                        })()
                     }}
                     className="text-gray-300 hover:text-white px-2 text-lg font-bold"
                 >

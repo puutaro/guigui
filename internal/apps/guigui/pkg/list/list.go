@@ -3,6 +3,7 @@ package list
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/gui"
@@ -28,7 +29,7 @@ type ListCmd struct {
 }
 
 func (cmd *ListCmd) Run(ctx context.Context) error {
-	fmt.Println("Launching Wails window for list...")
+	log.Println("Launching Wails window for list...")
 	return nil
 }
 

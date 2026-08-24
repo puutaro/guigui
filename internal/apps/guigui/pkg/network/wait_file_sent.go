@@ -99,7 +99,6 @@ func waitFileSent(
 			beforeSize = curSize
 			continue
 		}
-		log.Printf("JSON found: %s\n", reqPath)
 		break
 	}
 	return true

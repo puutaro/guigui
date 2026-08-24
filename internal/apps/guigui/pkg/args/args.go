@@ -25,6 +25,7 @@ type AppConfig struct {
 	FormCmd   *form.FormCmd
 	ListCmd   *list.ListCmd
 	IsGuiMode bool
+	IsQuitGui bool
 }
 
 func (CLI) Version() string {
@@ -43,8 +44,6 @@ func Parse() (*AppConfig, error) {
 	var windowConfig window.WindowOptions
 	formCmd := args.Form
 	listCmd := args.List
-	isGuiMode := false
-
 	switch {
 	case listCmd != nil:
 		stat, err := os.Stdin.Stat()
@@ -66,14 +65,18 @@ func Parse() (*AppConfig, error) {
 			args.List.IsStdin = true
 		}
 	}
+	isQuitGui := false
+	isGuiMode := false
 	switch {
 	case formCmd != nil:
 		windowConfig = formCmd.WindowOptions
 		isGuiMode = formCmd.GuiMode
+		isQuitGui = formCmd.QuitGui
 	case listCmd != nil:
 		windowConfig = listCmd.WindowOptions
 		cmdName = "list"
 		isGuiMode = listCmd.GuiMode
+		isQuitGui = listCmd.QuitGui
 	}
 	return &AppConfig{
 		CmdName:      cmdName,
@@ -81,5 +84,6 @@ func Parse() (*AppConfig, error) {
 		FormCmd:      args.Form,
 		ListCmd:      args.List,
 		IsGuiMode:    isGuiMode,
+		IsQuitGui:    isQuitGui,
 	}, nil
 }

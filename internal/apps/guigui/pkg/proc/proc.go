@@ -1,7 +1,7 @@
 package proc
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -55,13 +55,13 @@ func Kill(pid int) {
 	}
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		fmt.Printf("PID: %d not found: %v\n", pid, err)
+		log.Printf("PID: %d not found: %v\n", pid, err)
 		return
 	}
 	// 2. プロセスを強制終了（内部で SIGKILL または WindowsのTerminateProcess を実行）
 	err = proc.Kill()
 	if err != nil {
-		fmt.Printf("failure to kill: PID %d, err: %v\n", pid, err)
+		log.Printf("failure to kill: PID %d, err: %v\n", pid, err)
 		return
 	}
 }

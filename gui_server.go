@@ -32,7 +32,7 @@ func (app *App) startGuiServer(
 	}
 }
 
-func (a *App) HandleSendRequest(req network.GuiRequest) {
+func (a *App) HandleSendRequest(req network.GuiRequestForWebview) {
 	// ここで受け取ったリクエストを処理する
 }
 
@@ -61,35 +61,37 @@ func (a *App) loadAndSendJson(
 	}
 	os.Remove(filePath)
 	// 2. 構造体にパース（デコード）する
-	var sendReq network.GuiRequest
-	if err := json.Unmarshal(fileBytes, &sendReq); err != nil {
+	var sendSrcReq network.GuiRequest
+	if err := json.Unmarshal(fileBytes, &sendSrcReq); err != nil {
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
-	windowPositionConfig := a.windowPositionConfig
+	geometry := sendSrcReq.Geometry
 	runtime.WindowUnminimise(a.ctx)
 	runtime.WindowShow(a.ctx)
 	switch {
-	case windowPositionConfig.center:
+	case geometry.IsCenter:
 		runtime.WindowCenter(ctx)
-	case windowPositionConfig.x != nil && windowPositionConfig.y != nil:
+	case geometry.X != nil && geometry.Y != nil:
 		runtime.WindowSetPosition(
 			ctx,
-			*windowPositionConfig.x,
-			*windowPositionConfig.y,
+			*geometry.X,
+			*geometry.Y,
 		)
 	}
-	windowSizeConfig := a.windowSizeConfig
 	runtime.WindowSetSize(
 		ctx,
-		windowSizeConfig.width,
-		windowSizeConfig.height,
+		geometry.Width,
+		geometry.Height,
 	)
-	// runtime.WindowUnminimise(ctx)
 	// 3. Wailsのイベント機能を使ってGUIにプッシュ送信する
 	// 第一引数: コンテキスト
 	// 第二引数: フロントエンド側で待ち受けるイベント名（任意）
 	// 第三引数: 送りたいデータ（Wailsが自動でJSのオブジェクトに変換してくれます）
-	runtime.EventsEmit(a.ctx, "req", sendReq)
+	runtime.EventsEmit(a.ctx, "req", network.GuiRequestForWebview{
+		ViewMode: sendSrcReq.ViewMode,
+		Form:     sendSrcReq.Form,
+		List:     sendSrcReq.List,
+	})
 
 	return nil
 }

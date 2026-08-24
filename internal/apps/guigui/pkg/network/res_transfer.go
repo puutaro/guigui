@@ -7,7 +7,6 @@ import (
 
 type GuiResponse struct {
 	ExitCode int
-	DownGui  bool
 	Stdout   string
 }
 

@@ -14,29 +14,47 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/proc"
 )
 
-func (app *App) GetSendRequest() network.GuiRequest {
-	return network.GuiRequest{}
+func (app *App) GetSendRequest() network.GuiRequestForWebview {
+	return network.GuiRequestForWebview{}
 }
 
-func sendRegToGui(
+func sendReqToGui(
 	appConfig *args.AppConfig,
 ) {
+	geo := network.Geometry{}
 	formConfig := form.FormConfigResponse{}
 	if appConfig.FormCmd != nil {
-		formConfig = appConfig.FormCmd.GetFormConfig()
+		formCmd := appConfig.FormCmd
+		formConfig = formCmd.GetFormConfig()
+		geo = network.Geometry{
+			Width:    formCmd.Width,
+			Height:   formCmd.Height,
+			IsCenter: formCmd.Center,
+			X:        formCmd.X,
+			Y:        formCmd.Y,
+		}
 	}
 	listConfig := list.ListConfigResponse{}
 	if appConfig.ListCmd != nil {
-		listConfig = appConfig.ListCmd.GetListConfig()
+		listCmd := appConfig.ListCmd
+		listConfig = listCmd.GetListConfig()
+		geo = network.Geometry{
+			Width:    listCmd.Width,
+			Height:   listCmd.Height,
+			IsCenter: listCmd.Center,
+			X:        listCmd.X,
+			Y:        listCmd.Y,
+		}
 	}
 	sendReq := network.GuiRequest{
 		ViewMode: appConfig.CmdName,
 		Form:     formConfig,
 		List:     listConfig,
+		Geometry: geo,
 	}
 	sendReq.SendReqJson()
 }
-func serveGuiRes() {
+func serveGuiRes(isQuitGui bool) {
 	clientCh := make(chan string, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -48,7 +66,10 @@ func serveGuiRes() {
 	for {
 		select {
 		case jsonPath := <-clientCh:
-			if err := handleRes(jsonPath); err != nil {
+			if err := handleRes(
+				jsonPath,
+				isQuitGui,
+			); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(exitErrGeneral)
 				return
@@ -62,6 +83,7 @@ func serveGuiRes() {
 
 func handleRes(
 	jsonPath string,
+	isQuitGui bool,
 ) error {
 	fileBytes, err := network.LoadFileAsBytes(jsonPath)
 	if err != nil {
@@ -74,7 +96,7 @@ func handleRes(
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 	switch {
-	case recievRes.DownGui:
+	case isQuitGui:
 		proc.Kill(
 			proc.GetPidByGuiProcessRunning(),
 		)
