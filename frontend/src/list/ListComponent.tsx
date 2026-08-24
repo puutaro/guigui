@@ -69,11 +69,6 @@ export const  ListComponent =
             targetListElement.focus();
           });
         }, [selectedIndex, filteredBodyItemObjs]);
-        // const heightValue = (() => {
-        //     100 - 100 * ( borderValue / 100 )
-        //     return borderValue
-        // })()
-        // const maxHeightClass = `max-h-[${heightValue}vh]`;
             return (
             <div
                 id="list-view"
@@ -162,6 +157,7 @@ export const  ListComponent =
                     <FilterDisplay
                         listItemRefs={listItemRefs}
                         filterItemOpjs={filteredBodyItemObjs}
+                        setSearchQuery={setSearchQuery}
                         setSelectedIndex={setSelectedIndex}
                         borderValue={borderValue}
                         headerLines={headerLines}

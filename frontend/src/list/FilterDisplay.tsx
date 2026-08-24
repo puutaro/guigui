@@ -7,6 +7,7 @@ export type FilterDisplayProps = {
         nthKey: string
         matchedIndex: number[]
     }[],
+    setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
     setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
     borderValue: number;
     headerLines: number; // ★ ヘッダー行数を追加
@@ -16,6 +17,7 @@ export const FilterDisplay = (
     {
         listItemRefs,
         filterItemOpjs,
+        setSearchQuery,
         setSelectedIndex,
         borderValue,
         headerLines,
@@ -75,11 +77,13 @@ export const FilterDisplay = (
                                 listItemRefs.current[actualIndex]?.focus();
                             }}
                             onDoubleClick={() => {
+                                setSearchQuery("")
                                 outputLineByHidden(obj.lineKey ?? "");
                             }}
                             onKeyDown={(e)=>{
                                 if (e.key !== 'Enter') return
                                 e.preventDefault()
+                                setSearchQuery("")
                                 outputLineByHidden(obj.lineKey ?? "");
                             }}
                             style={{
