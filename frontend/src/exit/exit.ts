@@ -1,7 +1,6 @@
 import {
     ExitWith252,
     ExitWithNumber,
-    GetActiveMode,
     RunCmdAndExitForList,
     WriteStdoutByHidden,
     MinimizeGui,
@@ -25,7 +24,7 @@ export const RunCmdAndExitForListByMinimise = (
     // (window as any).runtime.WindowMinimise();
     (async () => {
         await MinimizeGui()
-        RunCmdAndExitForList(
+        await RunCmdAndExitForList(
             shell,
             selectedItem,
             delimiter ?? "",
@@ -41,6 +40,7 @@ export const WriteStdoutAndExitByHidden = async (
    res: network.GuiResponse
 ) => {
     (window as any).runtime.WindowMinimise();
+    await MinimizeGui()
     await WriteStdoutByHidden(res);
 }
 export const ExitByHidden = async (exitCode: number) => {

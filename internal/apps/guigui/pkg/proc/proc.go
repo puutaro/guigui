@@ -10,7 +10,7 @@ import (
 
 const NoProcessSignal = -1
 
-func GetPidByGuiProcessRunning() int {
+func GetPidByGuiProcessRunning(machineId string) int {
 	currentPid := int32(os.Getpid())
 	// 1. OS上で動いているすべてのプロセスを取得
 	processes, err := process.Processes()
@@ -38,12 +38,33 @@ func GetPidByGuiProcessRunning() int {
 		if err != nil {
 			continue
 		}
-		// 4. 引数の中に「--gui-mode」が厳密に含まれているかチェック
-		for _, arg := range cmdArgs {
+		// フラグのチェック用フラグ
+		hasGuiMode := false
+		hasTargetMachineId := false
+		// 4. 引数の中に「--gui-mode」と指定された「machineId」が含まれているかチェック
+		for i := 0; i < len(cmdArgs); i++ {
+			arg := cmdArgs[i]
 			if arg == "--gui-mode" {
-				// 「guigui」という名前で、かつ引数に「--gui-mode」を持つ別プロセスを発見！
-				return int(p.Pid)
+				hasGuiMode = true
 			}
+			// --id=<machineId> の形、または --id <machineId> の形に対応
+			switch {
+			case arg == "--id" && i+1 < len(cmdArgs):
+				if cmdArgs[i+1] != machineId {
+					break
+				}
+				hasTargetMachineId = true
+			case strings.HasPrefix(arg, "--id="):
+				idVal := strings.TrimPrefix(arg, "--id=")
+				if idVal != machineId {
+					break
+				}
+				hasTargetMachineId = true
+			}
+		}
+		// 「guigui」という名前で、かつ `--gui-mode` があり、指定した `machineId` を持つ別プロセスを発見！
+		if hasGuiMode && hasTargetMachineId {
+			return int(p.Pid)
 		}
 	}
 	return NoProcessSignal

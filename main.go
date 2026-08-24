@@ -55,8 +55,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", parseErr)
 		os.Exit(exitErrGeneral)
 	}
+	uniqueId := appConfig.UniqueId
 	isGuiProcess :=
-		proc.GetPidByGuiProcessRunning() !=
+		proc.GetPidByGuiProcessRunning(uniqueId) !=
 			proc.NoProcessSignal
 	if appConfig.IsGuiMode && !isGuiProcess {
 		err := startsGui(appConfig)
@@ -76,7 +77,10 @@ func main() {
 	if isGuiProcess {
 		sendReqToGui(appConfig)
 	}
-	serveGuiRes(appConfig.IsQuitGui)
+	serveGuiRes(
+		uniqueId,
+		appConfig.IsQuitGui,
+	)
 }
 
 func startsGui(appConfig *args.AppConfig) error {

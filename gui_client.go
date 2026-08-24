@@ -56,7 +56,10 @@ func sendReqToGui(
 	}
 	sendReq.SendReqJson()
 }
-func serveGuiRes(isQuitGui bool) {
+func serveGuiRes(
+	uniqueId string,
+	isQuitGui bool,
+) {
 	clientCh := make(chan string, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -69,6 +72,7 @@ func serveGuiRes(isQuitGui bool) {
 		select {
 		case jsonPath := <-clientCh:
 			if err := handleRes(
+				uniqueId,
 				jsonPath,
 				isQuitGui,
 			); err != nil {
@@ -84,6 +88,7 @@ func serveGuiRes(isQuitGui bool) {
 }
 
 func handleRes(
+	uniqueId string,
 	jsonPath string,
 	isQuitGui bool,
 ) error {
@@ -100,7 +105,7 @@ func handleRes(
 	switch {
 	case isQuitGui:
 		proc.Kill(
-			proc.GetPidByGuiProcessRunning(),
+			proc.GetPidByGuiProcessRunning(uniqueId),
 		)
 	}
 	if recievRes.Stdout != "" {
