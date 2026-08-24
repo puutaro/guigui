@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/fstanis/screenresolution"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -65,12 +66,21 @@ func (a *App) loadAndSendJson(
 	if err := json.Unmarshal(fileBytes, &sendSrcReq); err != nil {
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
-	geometry := sendSrcReq.Geometry
 	runtime.WindowUnminimise(a.ctx)
 	runtime.WindowShow(a.ctx)
+	geometry := sendSrcReq.Geometry
+	winWidth := geometry.Width
+	winHeight := geometry.Height
 	switch {
 	case geometry.IsCenter:
-		runtime.WindowCenter(ctx)
+		res := screenresolution.GetPrimary()
+		if res == nil {
+			runtime.WindowCenter(ctx)
+		} else {
+			x := (res.Width - winWidth) / 2
+			y := (res.Height - winHeight) / 2
+			runtime.WindowSetPosition(a.ctx, x, y)
+		}
 	case geometry.X != nil && geometry.Y != nil:
 		runtime.WindowSetPosition(
 			ctx,
@@ -80,8 +90,8 @@ func (a *App) loadAndSendJson(
 	}
 	runtime.WindowSetSize(
 		ctx,
-		geometry.Width,
-		geometry.Height,
+		winWidth,
+		winHeight,
 	)
 	// 3. Wailsのイベント機能を使ってGUIにプッシュ送信する
 	// 第一引数: コンテキスト
