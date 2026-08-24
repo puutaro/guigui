@@ -42,11 +42,12 @@ export const handleButtonClick = async (
           return currentValues[key] ?? field.defaultValue ?? "";
         } catch (err: any) {
           // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
-          console.log(`Excenptio at index ${index}: ${err?.message || err}`);
+          console.log(`Excenption at index ${index}: ${err?.message || err}`);
           return "";
         }
       })
       .join(separator);
+    isExecutingRef.current = false;
     await WriteStdoutAndExitByHidden({
         ExitCode: btn.exitCode,
         Stdout: outputString,

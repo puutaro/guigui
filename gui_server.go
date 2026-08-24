@@ -68,7 +68,6 @@ func (a *App) loadAndSendJson(
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 	runtime.WindowUnminimise(a.ctx)
-	runtime.WindowShow(a.ctx)
 	geometry := sendSrcReq.Geometry
 	winWidth := geometry.Width
 	winHeight := geometry.Height

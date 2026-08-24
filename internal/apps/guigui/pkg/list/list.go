@@ -9,6 +9,7 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/gui"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/unique"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
@@ -26,6 +27,7 @@ type ListCmd struct {
 	Cycle       bool     `arg:"--cycle" default:"false" help:"cycle cursor"`
 	window.WindowOptions
 	gui.GuiOptions
+	unique.Unique
 }
 
 func (cmd *ListCmd) Run(ctx context.Context) error {

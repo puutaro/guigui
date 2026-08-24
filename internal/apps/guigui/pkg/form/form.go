@@ -11,6 +11,7 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/gui"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/unique"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
@@ -38,6 +39,7 @@ type FormCmd struct {
 	window.WindowOptions
 	buttons.ButtonOptions
 	gui.GuiOptions
+	unique.Unique
 }
 
 // KongのRun()からも接続できるようにする
