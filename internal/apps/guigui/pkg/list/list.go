@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/gui"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 )
 
 type ListCmd struct {
-	List string `arg:"positional,separate" help:"string contents separated by newline"`
+	List    string `arg:"positional" help:"string contents separated by newline"`
+	IsStdin bool   `arg:"--is-stdin,hidden" default:"false" help:"use gui server luanch"`
 	// List        string   `arg:"--list" help:"string contents separated by newline"`
+	// ListFile    bool     `arg:"--list-file,hidden" help:""`
 	Reloads     []string `arg:"--reload,separate" help:"(alt/option)+key:shell reload list by shell stdout"`
 	Executes    []string `arg:"--execute,separate" help:"(alt/option)+key:exec shell by shell stdout"`
 	ExecQuits   []string `arg:"--exec-quit,separate" help:"(alt/option)+key:exit code:exec shell with exit by shell stdout"`
@@ -21,6 +24,7 @@ type ListCmd struct {
 	HeaderLines int      `arg:"--header-lines" default:"0" help:"display first line by header"`
 	Cycle       bool     `arg:"--cycle" default:"false" help:"cycle cursor"`
 	window.WindowOptions
+	gui.GuiOptions
 }
 
 func (cmd *ListCmd) Run(ctx context.Context) error {

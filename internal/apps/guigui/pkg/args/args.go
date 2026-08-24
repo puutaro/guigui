@@ -9,23 +9,22 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-arg"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 )
 
 type CLI struct {
-	Form  *form.FormCmd   `arg:"subcommand:form" help:"Launch a form dialog"`
-	List  *list.ListCmd   `arg:"subcommand:list" help:"Launch a list dialog"`
-	Alert *alert.AlertCmd `arg:"subcommand:alert" help:"Launch an alert dialog"`
+	Form *form.FormCmd `arg:"subcommand:form" help:"Launch a form dialog"`
+	List *list.ListCmd `arg:"subcommand:list" help:"Launch a list dialog"`
 }
 type AppConfig struct {
 	CmdName      string
 	WindowConfig window.WindowOptions
-	FormCmd      *form.FormCmd
-	ListCmd      *list.ListCmd
-	AlertCmd     *alert.AlertCmd
+
+	FormCmd   *form.FormCmd
+	ListCmd   *list.ListCmd
+	IsGuiMode bool
 }
 
 func (CLI) Version() string {
@@ -44,10 +43,9 @@ func Parse() (*AppConfig, error) {
 	var windowConfig window.WindowOptions
 	formCmd := args.Form
 	listCmd := args.List
-	alertCmd := args.Alert
+	isGuiMode := false
+
 	switch {
-	case formCmd != nil:
-		windowConfig = formCmd.WindowOptions
 	case listCmd != nil:
 		stat, err := os.Stdin.Stat()
 		if err != nil || (stat.Mode()&os.ModeCharDevice) != 0 {
@@ -65,18 +63,23 @@ func Parse() (*AppConfig, error) {
 		// 読み込んだ行を改行で結合して格納する
 		if len(lines) > 0 {
 			args.List.List = strings.Join(lines, "\n")
+			args.List.IsStdin = true
 		}
+	}
+	switch {
+	case formCmd != nil:
+		windowConfig = formCmd.WindowOptions
+		isGuiMode = formCmd.GuiMode
+	case listCmd != nil:
 		windowConfig = listCmd.WindowOptions
 		cmdName = "list"
-	case alertCmd != nil:
-		windowConfig = alertCmd.WindowOptions
-		cmdName = "alert"
+		isGuiMode = listCmd.GuiMode
 	}
 	return &AppConfig{
 		CmdName:      cmdName,
 		WindowConfig: windowConfig,
 		FormCmd:      args.Form,
-		AlertCmd:     args.Alert,
 		ListCmd:      args.List,
+		IsGuiMode:    isGuiMode,
 	}, nil
 }

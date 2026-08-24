@@ -9,11 +9,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/alert"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -21,15 +21,19 @@ type windowPositionConfig struct {
 	x, y   *int
 	center bool
 }
+type windowSizeConfig struct {
+	width  int
+	height int
+}
 
 type App struct {
 	ctx                  context.Context
 	activeMode           string
 	windowPositionConfig windowPositionConfig
+	windowSizeConfig     windowSizeConfig
 
-	formCmd  *form.FormCmd
-	listCmd  *list.ListCmd
-	alertCmd *alert.AlertCmd
+	formCmd *form.FormCmd
+	listCmd *list.ListCmd
 }
 
 func NewApp(appConfig *args.AppConfig) *App {
@@ -45,9 +49,12 @@ func NewApp(appConfig *args.AppConfig) *App {
 			y:      windowConfig.Y,
 			center: windowConfig.Center,
 		},
-		formCmd:  appConfig.FormCmd,
-		listCmd:  appConfig.ListCmd,
-		alertCmd: appConfig.AlertCmd,
+		windowSizeConfig: windowSizeConfig{
+			width:  windowConfig.Width,
+			height: windowConfig.Height,
+		},
+		formCmd: appConfig.FormCmd,
+		listCmd: appConfig.ListCmd,
 	}
 }
 
@@ -65,6 +72,12 @@ func (a *App) ExitWithNumber(exitCode int) {
 }
 func (a *App) WriteStdout(str string) {
 	fmt.Fprintln(os.Stdout, str)
+}
+func (a *App) WriteStdoutByHidden(res network.GuiResponse) {
+	// runtime.WindowHide(a.ctx)
+	runtime.WindowMinimise(a.ctx)
+	res.SendResJson()
+	// fmt.Fprintln(os.Stdout, str)
 }
 func (a *App) WriteStderr(str string) {
 	fmt.Fprintf(os.Stderr, "\x1b[31m%s\x1b[0m\n", str)
@@ -127,13 +140,20 @@ func (a *App) RunCmdForList(cmdStr, line, delimiter string) error {
 	return a.execRunCmd(replacedCmdStr, io.Discard)
 }
 
-func (a *App) RunCmdByQuitForList(cmdStr, line, delimiter string, exitCode int) {
+func (a *App) RunCmdByQuitForList(
+	cmdStr,
+	line,
+	delimiter string,
+	res network.GuiResponse,
+) {
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
 	err := a.execRunCmd(replacedCmdStr, io.Discard)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "command failed: %v", err)
 	}
-	a.ExitWithNumber(exitCode)
+	res.SendResJson()
+	// os.Exit(exitSuccess)
+	// a.ExitWithNumber(exitCode)
 }
 
 func (a *App) replaceHolder(cmdStr, line, delimiter string) string {
@@ -169,6 +189,9 @@ func (a *App) startup(ctx context.Context) {
 	case x != nil && y != nil:
 		runtime.WindowSetPosition(a.ctx, *x, *y)
 	}
+	go a.startGuiServer(
+		ctx,
+	)
 }
 
 // domReady is called after front-end resources have been loaded

@@ -19,7 +19,7 @@ export function useEscClose() {
 }
 
 // 必要に応じて型定義（既存のものがあればインポートしてください）
-export type ViewType = 'loading' | 'form' | 'list' | 'alert';
+export type ViewType = 'loading' | 'form' | 'list' ;
 
 // 外部から渡されると想定される GetActiveMode（適切にインポートしてください）
 // import { GetActiveMode } from './api'; 

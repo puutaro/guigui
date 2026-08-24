@@ -1,0 +1,37 @@
+package network
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
+)
+
+type GuiRequest struct {
+	ViewMode string                  `json:"viewMode"`
+	Form     form.FormConfigResponse `json:"form"`
+	List     list.ListConfigResponse `json:"list"`
+}
+
+func (req GuiRequest) SendReqJson() error {
+	fileBytes, err := json.MarshalIndent(req, "", "  ")
+	if err != nil {
+		return err
+	}
+	return SendJsonBytesToFile(
+		fileBytes,
+		GetReqJsonFilePath(),
+	)
+}
+func (req *GuiRequest) LoadReqJson() error {
+	fileBytes, err := LoadFileAsBytes(GetReqJsonFilePath())
+	if err != nil {
+		return err
+	}
+	// 修正: &req ではなく req をそのまま渡す
+	if err := json.Unmarshal(fileBytes, req); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+	return nil
+}

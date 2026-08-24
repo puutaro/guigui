@@ -1,0 +1,34 @@
+package network
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type GuiResponse struct {
+	ExitCode int
+	DownGui  bool
+	Stdout   string
+}
+
+func (res GuiResponse) SendResJson() error {
+	fileBytes, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		return err
+	}
+	return SendJsonBytesToFile(
+		fileBytes,
+		GetResJsonFilePath(),
+	)
+}
+func (res *GuiResponse) LoadResJson() error {
+	fileBytes, err := LoadFileAsBytes(GetResJsonFilePath())
+	if err != nil {
+		return err
+	}
+	// 修正: &req ではなく req をそのまま渡す
+	if err := json.Unmarshal(fileBytes, res); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+	return nil
+}

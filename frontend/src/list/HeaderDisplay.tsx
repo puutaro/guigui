@@ -1,4 +1,4 @@
-import {outputLineByExit} from "./libs/outputLineByExit";
+import {outputLineByHidden} from "./libs/outputLineByHidden";
 
 export type HeaderDisplayProps = {
     listItemRefs:  React.MutableRefObject<(HTMLLIElement | null)[]>;

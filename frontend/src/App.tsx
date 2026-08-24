@@ -1,15 +1,16 @@
 import wailsLogo from './assets/wails.png'
 import './App.css'
 import { useEffect, useState, useRef } from 'react';
-import { useEscClose, useLoadConfig, VIEW_MODES } from './useStartup';
+import {useEscClose, useLoadConfig, VIEW_MODES, ViewType} from './useStartup';
 import {
     GetFormConfig,
-    GetListConfig,
+    GetListConfig, WriteStderr, WriteStdout,
 } from '../wailsjs/go/main/App';
-import { form, list } from '../wailsjs/go/models'
+import {form, list, network} from '../wailsjs/go/models'
 import { FormComponent } from './form/FormComponent';
 import { ListComponent } from './list/ListComponent';
-import { CustomHeader } from "./header/CustomHeader"; // タイポ修正
+import { CustomHeader } from "./header/CustomHeader";
+import {EventsOn} from "../wailsjs/runtime"; // タイポ修正
 
 function App() {
     useEscClose()
@@ -19,14 +20,43 @@ function App() {
     const [formConfig, setFormConfig] = useState<form.FormConfigResponse | null>(null);
     const [iconAndTitle, setIconAndTitle] =
         useState<{title: string, windowIcon: string}>({title: "", windowIcon: ""});
-
-    // コンポーネントマウント時に Go から設定を取得
     useEffect(() => {
+        // Go側から "json-data-loaded" イベントが飛んできたら実行される
+        const unsubscribe = EventsOn("req", (data: network.GuiRequest) => {
+            try {
+                switch (data.viewMode) {
+                    case VIEW_MODES.FORM: {
+                        setFormConfig(data.form);
+                    }
+                        break
+                    case VIEW_MODES.LIST: {
+                        setListConfig(data.list);
+                    }
+                        break
+                }
+                setViewType(data.viewMode as ViewType);
+            } catch(e){
+                WriteStderr(`err ${e}`)
+            }
+        });
+
+        // クリーンアップ関数（コンポーネントが消えるときにリスナーを解除する）
+        return () => {
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
+        };
+    }, []);
+    // コンポーネントマウント時に Go から設定を取得
+    let isInitConfigLoadedRef = useRef(false)
+    useEffect(() => {
+        if(isInitConfigLoadedRef.current) return
         switch (true){
             case (viewType === VIEW_MODES.FORM): {
                 GetFormConfig()
                     .then((res) => {
                         setFormConfig(res);
+                        isInitConfigLoadedRef.current = true;
                         if (res.windowIcon || res.title) setIconAndTitle(
                             {
                                 title: res.title ?? "",
@@ -43,6 +73,7 @@ function App() {
                 GetListConfig()
                     .then((res) =>{
                         setListConfig(res)
+                        isInitConfigLoadedRef.current = true;
                         if (res.windowIcon || res.title) setIconAndTitle(
                             {
                                 title: res.title ?? "",
@@ -104,11 +135,6 @@ function App() {
                             listConfig={listConfig}
                             borderValue={borderValue}
                         />
-                    )}
-                    {viewType === VIEW_MODES.ALERT && (
-                        <div id="alert-view">
-                            <h1 className="text-2xl font-bold text-blue-900 mb-4">Alert Dialog</h1>
-                        </div>
                     )}
                 </div>
             </div>

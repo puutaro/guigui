@@ -5,7 +5,6 @@ export const VIEW_MODES = {
   LOADING: 'loading',
   FORM: 'form',
   LIST: 'list',
-  ALERT: 'alert',
 } as const;
 
 export type ViewType = typeof VIEW_MODES[keyof typeof VIEW_MODES];

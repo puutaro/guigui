@@ -1,5 +1,5 @@
 import {RunCmdByQuitForList, RunCmdForList, RunReloadCmdForList} from "../../wailsjs/go/main/App";
-import {list} from "../../wailsjs/go/models";
+import {list, network} from "../../wailsjs/go/models";
 import ExecuteConfig = list.ExecuteConfig;
 
 export const onKeyDown = (
@@ -48,7 +48,11 @@ export const onKeyDown = (
                 matchedExecQuit.shell,
                 selectedItem,
                 delimiter ?? "",
-                matchedExecQuit.exitCode,
+                {
+                   ExitCode: matchedExecQuit.exitCode,
+                   DownGui: true,
+                   Stdout: "",
+                },
             );
             return
         }

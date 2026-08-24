@@ -1,4 +1,4 @@
-import {outputLineByExit} from "./libs/outputLineByExit";
+import {outputLineByHidden} from "./libs/outputLineByHidden";
 
 export type FilterDisplayProps = {
     listItemRefs:  React.MutableRefObject<(HTMLLIElement | null)[]>;
@@ -75,12 +75,12 @@ export const FilterDisplay = (
                                 listItemRefs.current[actualIndex]?.focus();
                             }}
                             onDoubleClick={() => {
-                                outputLineByExit(obj.lineKey ?? "");
+                                outputLineByHidden(obj.lineKey ?? "");
                             }}
                             onKeyDown={(e)=>{
                                 if (e.key !== 'Enter') return
                                 e.preventDefault()
-                                outputLineByExit(obj.lineKey ?? "");
+                                outputLineByHidden(obj.lineKey ?? "");
                             }}
                             style={{
                                 padding: `${borderValue}px`,

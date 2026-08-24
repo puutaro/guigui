@@ -4,9 +4,12 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/guiproc"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/proc"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -16,21 +19,67 @@ import (
 )
 
 const (
+	exitSuccess    = 0
 	exitErrGeneral = 1
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed build/appicon.png
-var icon []byte
-
 func main() {
-	appConfig, parseErr := args.Parse()
+	isWailsTool := false
+	for _, arg := range os.Args {
+		// wailsbindings や wails の文字が含まれているかチェック
+		if strings.Contains(arg, "wailsbindings") || strings.Contains(arg, "wails") {
+			isWailsTool = true
+			break
+		}
+	}
+	var appConfig *args.AppConfig
+	var parseErr error
+	switch {
+	case isWailsTool:
+		// Wailsツールの時はパースをスキップし、落ちないようにダミーの構造体を作る
+		appConfig = &args.AppConfig{
+			IsGuiMode: true, // Wails側に「自分はGUIモードですよ」と思わせておく
+		}
+	default:
+		// 通常実行時のみ、本来の go-arg パースを実行する
+		appConfig, parseErr = args.Parse()
+		if parseErr != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", parseErr)
+			os.Exit(exitErrGeneral)
+		}
+	}
 	if parseErr != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", parseErr)
 		os.Exit(exitErrGeneral)
 	}
+	isGuiProcess :=
+		proc.GetPidByGuiProcessRunning() !=
+			proc.NoProcessSignal
+	if appConfig.IsGuiMode && !isGuiProcess {
+		err := startsGui(appConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			os.Exit(exitErrGeneral)
+		}
+		return
+	}
+	if !isGuiProcess {
+		err := guiproc.ExecGuiCmd(os.Args[1:], appConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+			os.Exit(exitErrGeneral)
+		}
+	}
+	if isGuiProcess {
+		sendRegToGui(appConfig)
+	}
+	serveGuiRes()
+}
+
+func startsGui(appConfig *args.AppConfig) error {
 	windowConfig := appConfig.WindowConfig
 	// Create an instance of the app structure
 	app := NewApp(
@@ -66,8 +115,5 @@ func main() {
 			app,
 		},
 	})
-
-	if err != nil {
-		println("Error:", err.Error())
-	}
+	return err
 }
