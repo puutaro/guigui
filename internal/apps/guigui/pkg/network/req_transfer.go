@@ -9,22 +9,23 @@ import (
 )
 
 type GuiRequest struct {
-	ViewMode string                  `json:"viewMode"`
-	Form     form.FormConfigResponse `json:"form"`
-	List     list.ListConfigResponse `json:"list"`
-	Geometry `json:"geometry"`
+	ViewMode      string                  `json:"viewMode"`
+	Form          form.FormConfigResponse `json:"form"`
+	List          list.ListConfigResponse `json:"list"`
+	WindowRequest `json:"geometry"`
 }
 type GuiRequestForWebview struct {
 	ViewMode string                  `json:"viewMode"`
 	Form     form.FormConfigResponse `json:"form"`
 	List     list.ListConfigResponse `json:"list"`
 }
-type Geometry struct {
+type WindowRequest struct {
 	Width    int  `json:"width"`
 	Height   int  `json:"height"`
 	IsCenter bool `json:"is_center"`
 	X        *int `json:"x"`
 	Y        *int `json:"y"`
+	IsHidden bool `json:"IsHidden"`
 }
 
 func (req GuiRequest) SendReqJson() error {

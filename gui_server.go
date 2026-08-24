@@ -67,12 +67,14 @@ func (a *App) loadAndSendJson(
 	if err := json.Unmarshal(fileBytes, &sendSrcReq); err != nil {
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
-	runtime.WindowUnminimise(a.ctx)
-	geometry := sendSrcReq.Geometry
-	winWidth := geometry.Width
-	winHeight := geometry.Height
+	winReq := sendSrcReq.WindowRequest
+	if !winReq.IsHidden {
+		runtime.WindowUnminimise(a.ctx)
+	}
+	winWidth := winReq.Width
+	winHeight := winReq.Height
 	switch {
-	case geometry.IsCenter:
+	case winReq.IsCenter:
 		res := screenresolution.GetPrimary()
 		if res == nil {
 			runtime.WindowCenter(ctx)
@@ -81,11 +83,11 @@ func (a *App) loadAndSendJson(
 			y := (res.Height - winHeight) / 2
 			runtime.WindowSetPosition(a.ctx, x, y)
 		}
-	case geometry.X != nil && geometry.Y != nil:
+	case winReq.X != nil && winReq.Y != nil:
 		runtime.WindowSetPosition(
 			ctx,
-			*geometry.X,
-			*geometry.Y,
+			*winReq.X,
+			*winReq.Y,
 		)
 	}
 	runtime.WindowSetSize(

@@ -12,4 +12,5 @@ type WindowOptions struct {
 	Y          *int   `arg:"--y" help:"Window Y position"`
 	Center     bool   `arg:"--center" help:"Window center position"`
 	Scroll     bool   `arg:"--scroll" help:"yad comp stub"`
+	Hidden     bool   `arg:"--hidden" help:"hidden widdow"`
 }

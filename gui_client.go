@@ -21,36 +21,38 @@ func (app *App) GetSendRequest() network.GuiRequestForWebview {
 func sendReqToGui(
 	appConfig *args.AppConfig,
 ) {
-	geo := network.Geometry{}
+	winReq := network.WindowRequest{}
 	formConfig := form.FormConfigResponse{}
-	if appConfig.FormCmd != nil {
+	listConfig := list.ListConfigResponse{}
+	switch {
+	case appConfig.FormCmd != nil:
 		formCmd := appConfig.FormCmd
 		formConfig = formCmd.GetFormConfig()
-		geo = network.Geometry{
+		winReq = network.WindowRequest{
 			Width:    formCmd.Width,
 			Height:   formCmd.Height,
 			IsCenter: formCmd.Center,
 			X:        formCmd.X,
 			Y:        formCmd.Y,
+			IsHidden: formCmd.WindowOptions.Hidden,
 		}
-	}
-	listConfig := list.ListConfigResponse{}
-	if appConfig.ListCmd != nil {
+	case appConfig.ListCmd != nil:
 		listCmd := appConfig.ListCmd
 		listConfig = listCmd.GetListConfig()
-		geo = network.Geometry{
+		winReq = network.WindowRequest{
 			Width:    listCmd.Width,
 			Height:   listCmd.Height,
 			IsCenter: listCmd.Center,
 			X:        listCmd.X,
 			Y:        listCmd.Y,
+			IsHidden: listCmd.WindowOptions.Hidden,
 		}
 	}
 	sendReq := network.GuiRequest{
-		ViewMode: appConfig.CmdName,
-		Form:     formConfig,
-		List:     listConfig,
-		Geometry: geo,
+		ViewMode:      appConfig.CmdName,
+		Form:          formConfig,
+		List:          listConfig,
+		WindowRequest: winReq,
 	}
 	sendReq.SendReqJson()
 }
