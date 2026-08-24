@@ -202,6 +202,10 @@ func (a *App) sendAllQuitSignal(ctx context.Context) bool {
 	return false
 }
 
+func (a *App) MinimizeGui() {
+	minimizeGUi(a.ctx)
+}
+
 // domReady is called after front-end resources have been loaded
 func (a App) domReady(ctx context.Context) {
 	// Add your action here

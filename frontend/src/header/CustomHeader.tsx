@@ -1,4 +1,5 @@
 import {memo} from 'react';
+import sleepingIcon from '../assets/sleeping.png';
 
 export type CustomHeaderProps = {
     windowIcon: string,
@@ -9,8 +10,17 @@ export const CustomHeader = memo( ({
                                  windowIcon,
                                  title,
                              }: CustomHeaderProps) => {
-    const isBase64 = windowIcon.startsWith('data:image/');
-    const src = isBase64 ? windowIcon : `/${windowIcon}`;
+    // const isBase64 = windowIcon.startsWith('data:image/');
+    // const src = isBase64 ? windowIcon : `/${windowIcon}`;
+    const getSrc = () => {
+        if (!windowIcon) {
+            return sleepingIcon; // 何も渡されなければインポートした画像を使う
+        }
+        if (windowIcon.startsWith('data:image/')) {
+            return windowIcon; // Base64ならそのまま
+        }
+        return windowIcon; // 通常のパスならそのまま
+    };
 
     return (
         <div
@@ -24,7 +34,7 @@ export const CustomHeader = memo( ({
             {/* 左側：アイコンとタイトル */}
             <div className="flex items-center space-x-2">
                 <img
-                    src={src || "/appicon.png"}
+                    src={getSrc()}
                     alt="App Icon"
                     className="w-5 h-5 object-contain"
                 />

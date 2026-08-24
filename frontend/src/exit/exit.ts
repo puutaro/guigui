@@ -3,13 +3,15 @@ import {
     ExitWithNumber,
     GetActiveMode,
     RunCmdAndExitForList,
-    WriteStdoutByHidden
+    WriteStdoutByHidden,
+    MinimizeGui,
 } from '../../wailsjs/go/main/App';
 import {network} from "../../wailsjs/go/models";
 
 export const Exit252ByMinimise = () => {
-    (window as any).runtime.WindowMinimise();
+    // (window as any).runtime.WindowMinimise();
     (async () => {
+        await MinimizeGui()
         await ExitWith252()
     })()
 }
@@ -20,16 +22,19 @@ export const RunCmdAndExitForListByMinimise = (
     exitCode: number,
     delimiter: string,
 ) => {
-    (window as any).runtime.WindowMinimise();
-    RunCmdAndExitForList(
-        shell,
-        selectedItem,
-        delimiter ?? "",
-        {
-            ExitCode: exitCode,
-            Stdout: "",
-        },
-    );
+    // (window as any).runtime.WindowMinimise();
+    (async () => {
+        await MinimizeGui()
+        RunCmdAndExitForList(
+            shell,
+            selectedItem,
+            delimiter ?? "",
+            {
+                ExitCode: exitCode,
+                Stdout: "",
+            },
+        );
+    })()
 }
 
 export const WriteStdoutAndExitByHidden = async (
@@ -39,6 +44,7 @@ export const WriteStdoutAndExitByHidden = async (
     await WriteStdoutByHidden(res);
 }
 export const ExitByHidden = async (exitCode: number) => {
-    (window as any).runtime.WindowMinimise();
+    // (window as any).runtime.WindowMinimise();
+    await MinimizeGui()
     await ExitWithNumber(exitCode);
 }

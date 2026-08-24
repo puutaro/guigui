@@ -20,17 +20,41 @@ function App() {
     const [formConfig, setFormConfig] = useState<form.FormConfigResponse | null>(null);
     const [iconAndTitle, setIconAndTitle] =
         useState<{title: string, windowIcon: string}>({title: "", windowIcon: ""});
+
+    const setTitleAndIcon = (
+        title: string,
+        windowIcon: string,
+    ) => {
+        if (!title && !windowIcon) return
+        setIconAndTitle(
+            {
+                title: title ?? "",
+                windowIcon: windowIcon ?? "",
+            }
+        );
+
+    }
     useEffect(() => {
         // Go側から "json-data-loaded" イベントが飛んできたら実行される
         const unsubscribe = EventsOn("req", (data: network.GuiRequestForWebview) => {
             try {
                 switch (data.viewMode) {
                     case VIEW_MODES.FORM: {
-                        setFormConfig(data.form);
+                        const form = data.form
+                        setFormConfig(form);
+                        setTitleAndIcon(
+                            form.title,
+                            form.windowIcon,
+                        );
                     }
                         break
                     case VIEW_MODES.LIST: {
-                        setListConfig(data.list);
+                        const list = data.list
+                        setListConfig(list);
+                        setTitleAndIcon(
+                            list.title,
+                            list.windowIcon,
+                        );
                     }
                         break
                 }
@@ -57,11 +81,9 @@ function App() {
                     .then((res) => {
                         setFormConfig(res);
                         isInitConfigLoadedRef.current = true;
-                        if (res.windowIcon || res.title) setIconAndTitle(
-                            {
-                                title: res.title ?? "",
-                                windowIcon: res.windowIcon ?? "",
-                            }
+                        setTitleAndIcon(
+                            res.title,
+                            res.windowIcon,
                         );
                     })
                     .catch((err) => {
@@ -74,11 +96,9 @@ function App() {
                     .then((res) =>{
                         setListConfig(res)
                         isInitConfigLoadedRef.current = true;
-                        if (res.windowIcon || res.title) setIconAndTitle(
-                            {
-                                title: res.title ?? "",
-                                windowIcon: res.windowIcon ?? "",
-                            }
+                        setTitleAndIcon(
+                            res.title,
+                            res.windowIcon,
                         );
                     }).catch((err) =>{
                     console.error("Failed to load form config:", err);

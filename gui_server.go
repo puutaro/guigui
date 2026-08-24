@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/fstanis/screenresolution"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -104,4 +105,15 @@ func (a *App) loadAndSendJson(
 	})
 
 	return nil
+}
+func minimizeGUi(ctx context.Context) {
+	runtime.EventsEmit(ctx, "req", network.GuiRequestForWebview{
+		ViewMode: "list",
+		List: list.ListConfigResponse{
+			Title: "Guigui sleeping...",
+			Text:  "Sleeping...",
+		},
+	})
+	// time.Sleep(50 * time.Millisecond)
+	runtime.WindowMinimise(ctx)
 }
