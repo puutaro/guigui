@@ -27,10 +27,9 @@ export const CustomSuggestInput = ({
     const [selectedSugIndex, setSelectedSugIndex] = useState<number>(-1);
     const [dropPosition, setDropPosition] = useState<'down' | 'up'>('down');
 
-    //  追加: キーボードスクロール時のマウスイベント誤発火防止フラグ
     const isKeyboardNav = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    //  追加: 各 li 要素を個別参照するための Ref
+    const listRef = useRef<HTMLUListElement>(null);
     const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     // 外側クリックでサジェストを閉じる
@@ -94,20 +93,25 @@ export const CustomSuggestInput = ({
         }
     }, [shouldShowSuggest]);
 
-    // 入力テキスト変更または非表示時に選択インデックスをリセット
+    // 非表示になったとき（または文字入力による検索時）に選択位置をリセット
+    // ※ 矢印キー移動時などに reset されないよう依存配列を調整
     useEffect(() => {
-        setSelectedSugIndex(-1);
-    }, [displayText, isOpen]);
+        if (!isOpen) {
+            setSelectedSugIndex(-1);
+        }
+    }, [isOpen]);
 
-    //  追加: 選択アイテムが変わった時に画面外であれば自動スクロールさせる処理
+    // キーボード操作時のスクロール移動
     useEffect(() => {
         if (selectedSugIndex >= 0 && itemRefs.current[selectedSugIndex]) {
             isKeyboardNav.current = true;
+
+            // 手動計算の代わりに scrollIntoView を使用
             itemRefs.current[selectedSugIndex]?.scrollIntoView({
-                block: 'nearest',
+                block: 'nearest',   // 上下に収まっていない場合のみ最小限スクロール
+                behavior: 'smooth'  // なめらかにスクロール（不要なら 'auto' に変更）
             });
 
-            // スクロールでマウス直下に要素が飛び込んできても onMouseMove が暴発しないようロック
             const timer = setTimeout(() => {
                 isKeyboardNav.current = false;
             }, 100);
@@ -134,6 +138,7 @@ export const CustomSuggestInput = ({
                 onChange={(e) => {
                     setIsAllSelected(false);
                     setFieldValue(fieldKey, e.target.value);
+                    setSelectedSugIndex(-1); // 文字を入力した時だけ選択を解除
                     updateDropPosition();
                     setIsOpen(true);
                 }}
@@ -158,6 +163,7 @@ export const CustomSuggestInput = ({
                             if (selectedSugIndex < 0) return;
                             e.preventDefault();
                             e.stopPropagation();
+                            // Enterを押した時だけ input へ挿入して閉じる
                             setFieldValue(fieldKey, filtered[selectedSugIndex].lineKey);
                             setIsOpen(false);
                             return;
@@ -180,7 +186,8 @@ export const CustomSuggestInput = ({
             {/* サジェストドロップダウン */}
             {shouldShowSuggest && (
                 <ul
-                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto ${
+                    ref={listRef}
+                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto py-1 ${
                         dropPosition === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
                     }`}
                 >
@@ -193,20 +200,18 @@ export const CustomSuggestInput = ({
                                 ref={(el) => (itemRefs.current[index] = el)}
                                 onMouseDown={(e) => {
                                     e.preventDefault();
+                                }}
+                                onClick={() => {
+                                    // シングルクリック：テキスト挿入は行わず、青色ハイライト（選択位置）のみ移動
+                                    setSelectedSugIndex(index);
+                                }}
+                                onDoubleClick={() => {
+                                    // ダブルクリック：Enterキーと同様に値を確定してドロップダウンを閉じる
                                     setFieldValue(fieldKey, sgText);
                                     setIsOpen(false);
                                 }}
-                                onMouseMove={() => {
-                                    // 修正: キー操作の自動スクロール中でない場合のみマウスホバー検知
-                                    if (!isKeyboardNav.current && selectedSugIndex !== index) {
-                                        setSelectedSugIndex(index);
-                                    }
-                                }}
-                                //  修正: whitespace-normal break-all leading-normal を追加して自動折り返しに対応
                                 className={`cursor-pointer whitespace-normal break-all leading-normal ${
-                                    isSelected
-                                        ? 'bg-blue-100 text-blue-900 font-semibold'
-                                        : 'hover:bg-blue-50'
+                                    isSelected ? 'bg-blue-100 text-blue-900 font-semibold' : ''
                                 }`}
                                 style={{
                                     fontSize: `${fontSize}px`,
