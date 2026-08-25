@@ -27,10 +27,9 @@ export const CustomSuggestInput = ({
     const [selectedSugIndex, setSelectedSugIndex] = useState<number>(-1);
     const [dropPosition, setDropPosition] = useState<'down' | 'up'>('down');
 
-    //  追加: キーボードスクロール時のマウスイベント誤発火防止フラグ
     const isKeyboardNav = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    //  追加: 各 li 要素を個別参照するための Ref
+    const listRef = useRef<HTMLUListElement>(null); // 追加: ul のスクロール直接操作用\
     const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     // 外側クリックでサジェストを閉じる
@@ -99,20 +98,32 @@ export const CustomSuggestInput = ({
         setSelectedSugIndex(-1);
     }, [displayText, isOpen]);
 
-    //  追加: 選択アイテムが変わった時に画面外であれば自動スクロールさせる処理
+    // 修正: scrollIntoView を使わず ul 内の scrollTop だけを安全に制御
     useEffect(() => {
-        if (selectedSugIndex >= 0 && itemRefs.current[selectedSugIndex]) {
-            isKeyboardNav.current = true;
-            itemRefs.current[selectedSugIndex]?.scrollIntoView({
-                block: 'nearest',
-            });
+        if (
+            selectedSugIndex < 0
+            || !itemRefs.current[selectedSugIndex]
+            || !listRef.current
+        ) return
+        isKeyboardNav.current = true;
+        const selectedEl = itemRefs.current[selectedSugIndex];
+        const ulEl = listRef.current;
+        if (selectedEl && ulEl) {
+            const elTop = selectedEl.offsetTop;
+            const elBottom = elTop + selectedEl.offsetHeight;
+            const ulTop = ulEl.scrollTop;
+            const ulBottom = ulTop + ulEl.clientHeight;
 
-            // スクロールでマウス直下に要素が飛び込んできても onMouseMove が暴発しないようロック
-            const timer = setTimeout(() => {
-                isKeyboardNav.current = false;
-            }, 100);
-            return () => clearTimeout(timer);
+            if (elTop < ulTop) {
+                ulEl.scrollTop = elTop;
+            } else if (elBottom > ulBottom) {
+                ulEl.scrollTop = elBottom - ulEl.clientHeight;
+            }
         }
+        const timer = setTimeout(() => {
+            isKeyboardNav.current = false;
+        }, 100);
+        return () => clearTimeout(timer);
     }, [selectedSugIndex]);
 
     return (
@@ -180,7 +191,8 @@ export const CustomSuggestInput = ({
             {/* サジェストドロップダウン */}
             {shouldShowSuggest && (
                 <ul
-                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto ${
+                    ref={listRef}
+                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto py-1 ${
                         dropPosition === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
                     }`}
                 >
@@ -197,12 +209,10 @@ export const CustomSuggestInput = ({
                                     setIsOpen(false);
                                 }}
                                 onMouseMove={() => {
-                                    // 修正: キー操作の自動スクロール中でない場合のみマウスホバー検知
                                     if (!isKeyboardNav.current && selectedSugIndex !== index) {
                                         setSelectedSugIndex(index);
                                     }
                                 }}
-                                //  修正: whitespace-normal break-all leading-normal を追加して自動折り返しに対応
                                 className={`cursor-pointer whitespace-normal break-all leading-normal ${
                                     isSelected
                                         ? 'bg-blue-100 text-blue-900 font-semibold'
