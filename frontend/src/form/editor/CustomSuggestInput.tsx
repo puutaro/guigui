@@ -26,7 +26,12 @@ export const CustomSuggestInput = ({
     const [isAllSelected, setIsAllSelected] = useState(false);
     const [selectedSugIndex, setSelectedSugIndex] = useState<number>(-1);
     const [dropPosition, setDropPosition] = useState<'down' | 'up'>('down');
+
+    //  追加: キーボードスクロール時のマウスイベント誤発火防止フラグ
+    const isKeyboardNav = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    //  追加: 各 li 要素を個別参照するための Ref
+    const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     // 外側クリックでサジェストを閉じる
     useEffect(() => {
@@ -76,7 +81,7 @@ export const CustomSuggestInput = ({
         const rect = containerRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+        if (spaceBelow < 400 && spaceAbove > spaceBelow) {
             setDropPosition('up');
             return;
         }
@@ -93,6 +98,22 @@ export const CustomSuggestInput = ({
     useEffect(() => {
         setSelectedSugIndex(-1);
     }, [displayText, isOpen]);
+
+    //  追加: 選択アイテムが変わった時に画面外であれば自動スクロールさせる処理
+    useEffect(() => {
+        if (selectedSugIndex >= 0 && itemRefs.current[selectedSugIndex]) {
+            isKeyboardNav.current = true;
+            itemRefs.current[selectedSugIndex]?.scrollIntoView({
+                block: 'nearest',
+            });
+
+            // スクロールでマウス直下に要素が飛び込んできても onMouseMove が暴発しないようロック
+            const timer = setTimeout(() => {
+                isKeyboardNav.current = false;
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [selectedSugIndex]);
 
     return (
         <div ref={containerRef} className="relative w-full">
@@ -159,7 +180,7 @@ export const CustomSuggestInput = ({
             {/* サジェストドロップダウン */}
             {shouldShowSuggest && (
                 <ul
-                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-60 overflow-y-auto ${
+                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto ${
                         dropPosition === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
                     }`}
                 >
@@ -169,18 +190,20 @@ export const CustomSuggestInput = ({
                         return (
                             <li
                                 key={sgText}
+                                ref={(el) => (itemRefs.current[index] = el)}
                                 onMouseDown={(e) => {
                                     e.preventDefault();
                                     setFieldValue(fieldKey, sgText);
                                     setIsOpen(false);
                                 }}
-                                // ⭕️ MouseMove に変更してマウスとキー操作の衝突を防止[cite: 5]
                                 onMouseMove={() => {
-                                    if (selectedSugIndex !== index) {
+                                    // 修正: キー操作の自動スクロール中でない場合のみマウスホバー検知
+                                    if (!isKeyboardNav.current && selectedSugIndex !== index) {
                                         setSelectedSugIndex(index);
                                     }
                                 }}
-                                className={`cursor-pointer ${
+                                //  修正: whitespace-normal break-all leading-normal を追加して自動折り返しに対応
+                                className={`cursor-pointer whitespace-normal break-all leading-normal ${
                                     isSelected
                                         ? 'bg-blue-100 text-blue-900 font-semibold'
                                         : 'hover:bg-blue-50'
