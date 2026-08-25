@@ -50,6 +50,7 @@ export const onKeyDown = (
                 selectedItem,
                 matchedExecHidden.exitCode,
                 delimiter,
+                "",
             );
             return
         }

@@ -20,6 +20,7 @@ export const RunCmdAndExitForListByMinimise = (
     selectedItem: string,
     exitCode: number,
     delimiter: string,
+    stdout: string,
 ) => {
     // (window as any).runtime.WindowMinimise();
     (async () => {
@@ -28,20 +29,22 @@ export const RunCmdAndExitForListByMinimise = (
             shell,
             selectedItem,
             delimiter ?? "",
-            {
-                ExitCode: exitCode,
-                Stdout: "",
-            },
+            exitCode,
+            stdout,
         );
     })()
 }
 
 export const WriteStdoutAndExitByHidden = async (
-   res: network.GuiResponse
+  stdout: string,
+  exitCode: number,
 ) => {
     (window as any).runtime.WindowMinimise();
     await MinimizeGui()
-    await WriteStdoutByHidden(res);
+    await WriteStdoutByHidden(
+        stdout,
+        exitCode,
+    );
 }
 export const ExitByHidden = async (exitCode: number) => {
     // (window as any).runtime.WindowMinimise();

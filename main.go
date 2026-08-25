@@ -55,7 +55,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", parseErr)
 		os.Exit(exitErrGeneral)
 	}
-	uniqueId := appConfig.UniqueId
+	uniqueId := getIdFromCmd(
+		appConfig.FormCmd,
+		appConfig.ListCmd,
+	)
 	isGuiProcess :=
 		proc.GetPidByGuiProcessRunning(uniqueId) !=
 			proc.NoProcessSignal

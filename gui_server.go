@@ -16,10 +16,17 @@ import (
 func (app *App) startGuiServer(
 	ctx context.Context,
 ) {
+	id := ""
+	switch {
+	case app.formCmd != nil:
+		id = app.formCmd.Id
+	case app.listCmd != nil:
+		id = app.listCmd.Id
+	}
 	srvCh := make(chan string, 1)
 	go network.StartServer(
 		ctx,
-		network.GetReqJsonFilePath(),
+		network.GetReqJsonFilePath(id),
 		srvCh,
 	)
 	for {
@@ -100,6 +107,7 @@ func (a *App) loadAndSendJson(
 	// 第二引数: フロントエンド側で待ち受けるイベント名（任意）
 	// 第三引数: 送りたいデータ（Wailsが自動でJSのオブジェクトに変換してくれます）
 	runtime.EventsEmit(a.ctx, "req", network.GuiRequestForWebview{
+		Id:       sendSrcReq.Id,
 		ViewMode: sendSrcReq.ViewMode,
 		Form:     sendSrcReq.Form,
 		List:     sendSrcReq.List,
@@ -107,8 +115,12 @@ func (a *App) loadAndSendJson(
 
 	return nil
 }
-func minimizeGUi(ctx context.Context) {
+func minimizeGUi(
+	ctx context.Context,
+	id string,
+) {
 	runtime.EventsEmit(ctx, "req", network.GuiRequestForWebview{
+		Id:       id,
 		ViewMode: "list",
 		List: list.ListConfigResponse{
 			Title: "Guigui sleeping...",

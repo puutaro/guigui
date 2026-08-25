@@ -24,9 +24,11 @@ func sendReqToGui(
 	winReq := network.WindowRequest{}
 	formConfig := form.FormConfigResponse{}
 	listConfig := list.ListConfigResponse{}
+	id := ""
 	switch {
 	case appConfig.FormCmd != nil:
 		formCmd := appConfig.FormCmd
+		id = formCmd.Id
 		formConfig = formCmd.GetFormConfig()
 		winReq = network.WindowRequest{
 			Width:    formCmd.Width,
@@ -38,6 +40,7 @@ func sendReqToGui(
 		}
 	case appConfig.ListCmd != nil:
 		listCmd := appConfig.ListCmd
+		id = listCmd.Id
 		listConfig = listCmd.GetListConfig()
 		winReq = network.WindowRequest{
 			Width:    listCmd.Width,
@@ -49,6 +52,7 @@ func sendReqToGui(
 		}
 	}
 	sendReq := network.GuiRequest{
+		Id:            id,
 		ViewMode:      appConfig.CmdName,
 		Form:          formConfig,
 		List:          listConfig,
@@ -65,7 +69,7 @@ func serveGuiRes(
 	defer cancel()
 	go network.StartServer(
 		ctx,
-		network.GetResJsonFilePath(),
+		network.GetResJsonFilePath(uniqueId),
 		clientCh,
 	)
 	for {

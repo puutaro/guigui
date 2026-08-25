@@ -6,6 +6,7 @@ import (
 )
 
 type GuiResponse struct {
+	Id       string
 	ExitCode int
 	Stdout   string
 }
@@ -17,11 +18,11 @@ func (res GuiResponse) SendResJson() error {
 	}
 	return SendJsonBytesToFile(
 		fileBytes,
-		GetResJsonFilePath(),
+		GetResJsonFilePath(res.Id),
 	)
 }
 func (res *GuiResponse) LoadResJson() error {
-	fileBytes, err := LoadFileAsBytes(GetResJsonFilePath())
+	fileBytes, err := LoadFileAsBytes(GetResJsonFilePath(res.Id))
 	if err != nil {
 		return err
 	}

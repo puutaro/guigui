@@ -9,12 +9,14 @@ import (
 )
 
 type GuiRequest struct {
+	Id            string                  `json:"id"`
 	ViewMode      string                  `json:"viewMode"`
 	Form          form.FormConfigResponse `json:"form"`
 	List          list.ListConfigResponse `json:"list"`
 	WindowRequest `json:"geometry"`
 }
 type GuiRequestForWebview struct {
+	Id       string                  `json:"id"`
 	ViewMode string                  `json:"viewMode"`
 	Form     form.FormConfigResponse `json:"form"`
 	List     list.ListConfigResponse `json:"list"`
@@ -35,11 +37,11 @@ func (req GuiRequest) SendReqJson() error {
 	}
 	return SendJsonBytesToFile(
 		fileBytes,
-		GetReqJsonFilePath(),
+		GetReqJsonFilePath(req.Id),
 	)
 }
 func (req *GuiRequest) LoadReqJson() error {
-	fileBytes, err := LoadFileAsBytes(GetReqJsonFilePath())
+	fileBytes, err := LoadFileAsBytes(GetReqJsonFilePath(req.Id))
 	if err != nil {
 		return err
 	}

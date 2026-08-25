@@ -26,7 +26,7 @@ type AppConfig struct {
 	ListCmd   *list.ListCmd
 	IsGuiMode bool
 	IsQuitGui bool
-	UniqueId  string
+	// UniqueId  string
 }
 
 func (CLI) Version() string {
@@ -78,19 +78,19 @@ func Parse() (*AppConfig, error) {
 	}
 	isQuitGui := false
 	isGuiMode := false
-	uniqueId := ""
+	// uniqueId := ""
 	switch {
 	case formCmd != nil:
 		windowConfig = formCmd.WindowOptions
 		isGuiMode = formCmd.GuiMode
 		isQuitGui = formCmd.QuitGui
-		uniqueId = formCmd.Id
+		// uniqueId = formCmd.Id
 	case listCmd != nil:
 		windowConfig = listCmd.WindowOptions
 		cmdName = "list"
 		isGuiMode = listCmd.GuiMode
 		isQuitGui = listCmd.QuitGui
-		uniqueId = listCmd.Id
+		// uniqueId = listCmd.Id
 	}
 	return &AppConfig{
 		CmdName:      cmdName,
@@ -99,6 +99,6 @@ func Parse() (*AppConfig, error) {
 		ListCmd:      args.List,
 		IsGuiMode:    isGuiMode,
 		IsQuitGui:    isQuitGui,
-		UniqueId:     uniqueId,
+		// UniqueId:     uniqueId,
 	}, nil
 }

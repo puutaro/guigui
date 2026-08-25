@@ -1,6 +1,7 @@
 package network
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -9,15 +10,15 @@ func GetAppDir() string {
 	appDir := filepath.Join(os.TempDir(), "cmdclick")
 	return appDir
 }
-func GetReqJsonDirPath() string {
+func getReqJsonDirPath() string {
 	return filepath.Join(GetAppDir(), "req")
 }
-func GetReqJsonFilePath() string {
-	return filepath.Join(GetReqJsonDirPath(), "req.json")
+func GetReqJsonFilePath(id string) string {
+	return filepath.Join(getReqJsonDirPath(), fmt.Sprintf("req_%s.json", id))
 }
-func GetResJsonDirPath() string {
+func getResJsonDirPath() string {
 	return filepath.Join(GetAppDir(), "res")
 }
-func GetResJsonFilePath() string {
-	return filepath.Join(GetResJsonDirPath(), "res.json")
+func GetResJsonFilePath(id string) string {
+	return filepath.Join(getResJsonDirPath(), fmt.Sprintf("res_%s.json", id))
 }

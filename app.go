@@ -5,9 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
@@ -63,24 +66,30 @@ func (a *App) GetActiveMode() string {
 }
 func (a *App) ExitWith252() {
 	network.GuiResponse{
+		Id:       a.getId(),
 		ExitCode: 252,
 	}.SendResJson()
 }
-func (a *App) ExitWith1() {
+func (a *App) ExitWithNumber(
+	exitCode int,
+) {
 	network.GuiResponse{
-		ExitCode: 1,
-	}.SendResJson()
-}
-func (a *App) ExitWithNumber(exitCode int) {
-	network.GuiResponse{
+		Id:       a.getId(),
 		ExitCode: exitCode,
 	}.SendResJson()
 }
 func (a *App) WriteStdout(str string) {
 	fmt.Fprintln(os.Stdout, str)
 }
-func (a *App) WriteStdoutByHidden(res network.GuiResponse) {
-	res.SendResJson()
+func (a *App) WriteStdoutByHidden(
+	stdout string,
+	exitCode int,
+) {
+	network.GuiResponse{
+		Id:       a.getId(),
+		Stdout:   stdout,
+		ExitCode: exitCode,
+	}.SendResJson()
 }
 func (a *App) WriteStderr(str string) {
 	fmt.Fprintf(os.Stderr, "\x1b[31m%s\x1b[0m\n", str)
@@ -147,12 +156,18 @@ func (a *App) RunCmdAndExitForList(
 	cmdStr,
 	line,
 	delimiter string,
-	res network.GuiResponse,
+	exitCode int,
+	stdout string,
 ) {
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
 	err := a.execRunCmd(replacedCmdStr, io.Discard)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "command failed: %v", err)
+	}
+	res := network.GuiResponse{
+		Id:       a.getId(),
+		ExitCode: exitCode,
+		Stdout:   stdout,
 	}
 	res.SendResJson()
 }
@@ -193,17 +208,76 @@ func (a *App) startup(ctx context.Context) {
 	go a.startGuiServer(
 		ctx,
 	)
+	go a.watchOSSignals()
 }
 
-func (a *App) sendAllQuitSignal(ctx context.Context) bool {
+func (a *App) getId() string {
+	return getIdFromCmd(
+		a.formCmd,
+		a.listCmd,
+	)
+}
+
+func getIdFromCmd(
+	formCmd *form.FormCmd,
+	listCmd *list.ListCmd,
+) string {
+	switch {
+	case formCmd != nil:
+		return formCmd.Id
+	case listCmd != nil:
+		return listCmd.Id
+	}
+	return ""
+}
+
+func (a *App) sendAllQuitSignal(
+	ctx context.Context,
+) bool {
 	network.GuiResponse{
-		ExitCode: 1,
+		Id:       a.getId(),
+		ExitCode: exitErrGeneral,
 	}.SendResJson()
+	a.cleanupAndSendQuitSignal()
 	return false
 }
 
 func (a *App) MinimizeGui() {
-	minimizeGUi(a.ctx)
+	minimizeGUi(
+		a.ctx,
+		a.getId(),
+	)
+}
+func (a *App) cleanupAndSendQuitSignal() {
+	id := a.getId()
+	removeFile(network.GetReqJsonFilePath(id))
+	removeFile(network.GetReqJsonFilePath(id))
+}
+
+// 【ルートBの監視：main関数やStartupなどでバックグラウンド起動しておく】
+func (a *App) watchOSSignals() {
+	sigChan := make(chan os.Signal, 1)
+	// SIGINT (Ctrl+C) や SIGTERM (通常の kill コマンド) をキャッチ
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		a.cleanupAndSendQuitSignal()
+		os.Exit(0)
+	}()
+}
+
+func removeFile(filePath string) {
+	_, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		log.Printf("failure to cean up: %s", err)
+		return
+	}
+	if err := os.Remove(filePath); err != nil {
+		log.Printf("failure to cean up: %s", err)
+	}
 }
 
 // domReady is called after front-end resources have been loaded

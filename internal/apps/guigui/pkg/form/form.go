@@ -61,6 +61,7 @@ func (c *FormCmd) GetWindowConfig() window.WindowOptions {
 
 // レスポンス用の構造体を定義（これなら型安全！）
 type FormConfigResponse struct {
+	Id            string      `json:"id"`
 	WindowIcon    string      `json:"windowIcon"`
 	Title         string      `json:"title"`
 	Text          string      `json:"text"`
@@ -102,6 +103,7 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 	}
 
 	return FormConfigResponse{
+		Id:            cmd.Id,
 		WindowIcon:    image.ImageToBase64(cmd.WindowIcon),
 		Title:         cmd.Title,
 		Text:          text.TextUnescapeNewlinesTab(cmd.Text),

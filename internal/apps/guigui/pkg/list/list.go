@@ -45,6 +45,7 @@ func (c *ListCmd) GetWindowConfig() window.WindowOptions {
 }
 
 type ListConfigResponse struct {
+	Id          string          `json:"id"`
 	WindowIcon  string          `json:"windowIcon"`
 	Title       string          `json:"title"`
 	Text        string          `json:"text"`
@@ -83,6 +84,7 @@ func (cmd *ListCmd) GetListConfig() ListConfigResponse {
 		execQuits[i] = cmd.parseKeyExitShell(quitExecStr)
 	}
 	return ListConfigResponse{
+		Id:          cmd.Id,
 		WindowIcon:  image.ImageToBase64(cmd.WindowIcon),
 		Title:       cmd.Title,
 		Text:        text.TextUnescapeNewlinesTab(cmd.Text),

@@ -48,8 +48,8 @@ export const handleButtonClick = async (
       })
       .join(separator);
     isExecutingRef.current = false;
-    await WriteStdoutAndExitByHidden({
-        ExitCode: btn.exitCode,
-        Stdout: outputString,
-    });
+    await WriteStdoutAndExitByHidden(
+        outputString,
+        btn.exitCode,
+    );
   };
