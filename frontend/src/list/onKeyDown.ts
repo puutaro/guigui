@@ -120,25 +120,5 @@ export const onKeyDown = (params: OnKeyDownParams) => {
             });
             break;
         }
-        case (
-            (e.key.length === 1
-                && !e.ctrlKey
-                && !e.metaKey
-                && !e.altKey
-            ) ||
-            e.key === 'Backspace' ||
-            e.key === 'Delete'
-        ): {
-            if (e.nativeEvent.isComposing) return;
-            searchInputRef.current?.focus();
-
-            if (e.key === 'Backspace'
-                || e.key === 'Delete') {
-                setSearchQuery(prev => prev.slice(0, -1));
-            } else {
-                setSearchQuery(prev => prev + e.key);
-            }
-            break;
-        }
     }
 };
