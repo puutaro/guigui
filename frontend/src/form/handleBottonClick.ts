@@ -1,8 +1,8 @@
 import { form } from '../../wailsjs/go/models';
-import {
-    ExitWithNumber,
-} from '../../wailsjs/go/main/App';
 import {ExitByHidden, WriteStdoutAndExitByHidden} from "../exit/exit";
+import {SuggestHistoryItem} from "./FormComponent";
+import {saveAllTxtHistory} from "./editor/suggest";
+import {makeKey} from "./editor/makeKey";
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -12,6 +12,7 @@ export const handleButtonClick = async (
     btn: form.ButtonDef,
     formValuesRef: React.MutableRefObject<Record<string, string>>,
     isExecutingRef: React.MutableRefObject<boolean>,
+    setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
 ): Promise<void> => {
     if (isExecutingRef.current) {
       return;
@@ -21,7 +22,6 @@ export const handleButtonClick = async (
       await ExitByHidden(btn.exitCode);
       return
     }
-    
     let currentConfig = formConfigRef.current;
     let fields = currentConfig?.fields || [];
     let retries = 0;
@@ -32,13 +32,21 @@ export const handleButtonClick = async (
       fields = currentConfig?.fields || [];
       retries++;
     }
-    const separator = currentConfig?.separator || "!";
     const currentValues = formValuesRef.current;
+    saveAllTxtHistory (
+        currentConfig,
+        currentValues,
+        setHistoryMap,
+    )
+    const separator = currentConfig?.separator || "!";
     const outputString = fields
       .map((field, index) => {
         try {
           const label = field.label;
-          const key = `${index}_${label}`;
+          const key = makeKey(
+              index,
+              label,
+          );
           return currentValues[key] ?? field.defaultValue ?? "";
         } catch (err: any) {
           // どこで、何というエラーで落ちたかを確実にファイルや標準出力に吐かせる
@@ -53,3 +61,4 @@ export const handleButtonClick = async (
         btn.exitCode,
     );
   };
+

@@ -1,4 +1,5 @@
 import { form } from '../../../wailsjs/go/models';
+import {SuggestHistoryItem} from "../FormComponent";
 
 export type BottomButtonProps = {
   borderValue: number;
@@ -7,11 +8,13 @@ export type BottomButtonProps = {
   formValuesRef: React.MutableRefObject<Record<string, string>>,
   isAltPressed: boolean;
   isExecutingRef: React.MutableRefObject<boolean>,
+  setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
   handleButtonClick: (
     formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>,
     btn: form.ButtonDef,
     formValuesRef: React.MutableRefObject<Record<string, string>>,
     isExecutingRef: React.MutableRefObject<boolean>,
+    setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
   ) => Promise<void>;
 }
 
@@ -22,6 +25,7 @@ export const BottomButton = ({
   formValuesRef,
   isAltPressed,
   isExecutingRef,
+  setHistoryMap,
   handleButtonClick,
 }: BottomButtonProps) => {
   return (
@@ -40,6 +44,7 @@ export const BottomButton = ({
                 btn,
                 formValuesRef,
                 isExecutingRef,
+                setHistoryMap,
             )}
             className="border rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-sm shadow-sm"
             style={{ 

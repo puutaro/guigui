@@ -35,14 +35,12 @@ func main() {
 			break
 		}
 	}
-	var appConfig *args.AppConfig
+	appConfig := &args.AppConfig{}
+	isGuiMode := false
 	var parseErr error
 	switch {
 	case isWailsTool:
-		// Wailsツールの時はパースをスキップし、落ちないようにダミーの構造体を作る
-		appConfig = &args.AppConfig{
-			IsGuiMode: true, // Wails側に「自分はGUIモードですよ」と思わせておく
-		}
+		isGuiMode = true
 	default:
 		// 通常実行時のみ、本来の go-arg パースを実行する
 		appConfig, parseErr = args.Parse()
@@ -50,6 +48,10 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s\n", parseErr)
 			os.Exit(exitErrGeneral)
 		}
+		isGuiMode = getIsGuiModeFromCmd(
+			appConfig.FormCmd,
+			appConfig.ListCmd,
+		)
 	}
 	if parseErr != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", parseErr)
@@ -62,7 +64,7 @@ func main() {
 	isGuiProcess :=
 		proc.GetPidByGuiProcessRunning(uniqueId) !=
 			proc.NoProcessSignal
-	if appConfig.IsGuiMode && !isGuiProcess {
+	if isGuiMode && !isGuiProcess {
 		err := startsGui(appConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
@@ -82,7 +84,10 @@ func main() {
 	}
 	serveGuiRes(
 		uniqueId,
-		appConfig.IsQuitGui,
+		getisQuitGuiFromCmd(
+			appConfig.FormCmd,
+			appConfig.ListCmd,
+		),
 	)
 }
 

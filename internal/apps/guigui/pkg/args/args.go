@@ -2,7 +2,6 @@ package args
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -42,11 +41,11 @@ func Parse() (*AppConfig, error) {
 	arg.MustParse(&args)
 	switch {
 	case args.Form != nil:
-		if err := validateId(args.Form.Id); err != nil {
+		if err := validateId(args.Form.Id, "id"); err != nil {
 			return nil, err
 		}
 	case args.List != nil:
-		if err := validateId(args.List.Id); err != nil {
+		if err := validateId(args.List.Id, "id"); err != nil {
 			return nil, err
 		}
 	}
@@ -90,31 +89,31 @@ func Parse() (*AppConfig, error) {
 	}, nil
 }
 
-func validateId(path string) error {
+func validateId(path string, name string) error {
 	// 1. 空文字チェック
 	if strings.TrimSpace(path) == "" {
-		return errors.New("id cannot be empty")
+		return fmt.Errorf("%s cannot be empty", name)
 	}
 	// 2. パス全体の長さチェック (通常は4096バイト未満)
 	if len(path) > 4096 {
-		return errors.New("id is too long (exceeds 4096 bytes)")
+		return fmt.Errorf("%s is too long (exceeds 4096 bytes)", name)
 	}
 	// 3. 各文字単位での危険文字チェック
 	for i, r := range path {
 		switch {
 		// ヌル文字 (パスの途中で途切れる原因)
 		case r == '\x00':
-			return fmt.Errorf("id contains null character at index %d", i)
+			return fmt.Errorf("%s contains null character at index %d", name, i)
 		// 改行文字 (LF, CR。スクリプトやログのパースを壊す)
 		case r == '\n' || r == '\r':
-			return fmt.Errorf("id contains newline character at index %d", i)
+			return fmt.Errorf("%s contains newline character at index %d", name, i)
 		// シェルのメタ文字・制御文字（インジェクションやパース崩れを防ぐため厳格に弾く場合）
 		// 必要に応じて許可する文字に合わせて調整してください
 		case r == ';' || r == '&' || r == '|' || r == '`' || r == '$' || r == '<' || r == '>':
-			return fmt.Errorf("id contains dangerous shell meta character '%c' at index %d", r, i)
+			return fmt.Errorf("%s contains dangerous shell meta character '%c' at index %d", name, r, i)
 		// ダブルクォーテーション・シングルクォーテーション
 		case r == '"' || r == '\'':
-			return fmt.Errorf("id contains quote character '%c' at index %d", r, i)
+			return fmt.Errorf("%s contains quote character '%c' at index %d", name, r, i)
 		}
 	}
 	// 4. 個別のファイル名セグメントごとのチェック（必要に応じて）
@@ -123,16 +122,16 @@ func validateId(path string) error {
 	for _, seg := range segments {
 		// セグメントが長すぎる場合（通常は255バイト以下）
 		if len(seg) > 255 {
-			return errors.New("id is too long (exceeds 255 bytes)")
+			return fmt.Errorf("%s is too long (exceeds 255 bytes)", name)
 		}
 		// 「.」や「..」単体の混入を厳しく弾きたい場合
 		if seg == "." || seg == ".." {
-			return errors.New("id segment cannot be '.' or '..'")
+			return fmt.Errorf("%s segment cannot be '.' or '..'", name)
 		}
 	}
 	// 不正なUTF-8シーケンスが含まれていないかチェック
 	if !utf8.ValidString(path) {
-		return errors.New("id contains invalid UTF-8 sequence")
+		return fmt.Errorf("%s contains invalid UTF-8 sequence", name)
 	}
 	return nil
 }

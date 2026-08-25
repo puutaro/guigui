@@ -1,0 +1,66 @@
+
+// ★ Ctrl+Enter押下時：各 TXT フィールドの入力を更新し、対応する localStorage キーに個別に保存する
+import {SuggestHistoryItem} from "../FormComponent";
+import {form} from "../../../wailsjs/go/models";
+import {makeKey} from "./makeKey";
+
+export const saveAllTxtHistory = (
+    currentConfig: form.FormConfigResponse | null,
+    currentValues: Record<string, string>,
+    setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void
+
+) => {
+    if (!currentConfig) return;
+    setHistoryMap((prev) => {
+        const nextMap = { ...prev };
+        const now = Date.now();
+
+        currentConfig.fields.forEach((field, index) => {
+            if (field.type !== 'STXT') return
+            const fieldLabel = field.label;
+            const key = makeKey(index, fieldLabel);
+            const storageKey = getLocalStorageKey(
+                currentConfig.id,
+                currentConfig.subId,
+                fieldLabel,
+            ); // 独立した localStorage キー
+            const val = (currentValues[key] ?? "").trim();
+            if (!val) return;
+            const existingList = nextMap[fieldLabel] ? [...nextMap[fieldLabel]] : [];
+            const existingIndex = existingList.findIndex(
+                item =>
+                    item.value === val
+            );
+            if (existingIndex !== -1) {
+                // 重複あり：タイムスタンプのみ更新
+                existingList[existingIndex] = {
+                    ...existingList[existingIndex],
+                    timestamp: now
+                };
+            } else {
+                // 新規追加
+                existingList.push({ value: val, timestamp: now });
+            }
+            // タイムスタンプ降順（新しい順）にソート
+            existingList.sort((a, b) => b.timestamp - a.timestamp);
+            nextMap[fieldLabel] = existingList;
+            // ★ フィールドごとに独立した localStorage キーで永続化保存
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(existingList));
+            } catch (error) {
+                console.error(`Failed to save suggest history to ${storageKey}:`, error);
+            }
+        });
+
+        return nextMap;
+    });
+};
+
+// 内部キーから LocalStorage 用のキーを生成するヘルパー関数
+export const getLocalStorageKey = (
+    id: string | undefined,
+    subId: string | undefined,
+    label: string,
+) => {
+    return `${id ?? "id"}_${subId ?? "subId"}_${label}`;
+};
