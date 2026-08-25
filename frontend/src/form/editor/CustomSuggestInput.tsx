@@ -1,7 +1,9 @@
+// editor/CustomSuggestInput.tsx
+
 import { SuggestHistoryItem } from "../FormComponent";
-import {useEffect, useMemo, useRef, useState} from "react";
-import {filterListItemObjs} from "../../libs/filer";
-import {renderForFilterText} from "../../libs/renderForFilterText";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { filterListItemObjs } from "../../libs/filer";
+import { renderForFilterText } from "../../libs/renderForFilterText";
 
 export type CustomSuggestInputProps = {
     fieldKey: string;
@@ -10,22 +12,20 @@ export type CustomSuggestInputProps = {
     historyItems: SuggestHistoryItem[];
     fontSize: number;
     borderValue: number;
-}
+};
 
-export const CustomSuggestInput = (
-    {
-        fieldKey,
-        displayText,
-        setFieldValue,
-        historyItems,
-        fontSize,
-        borderValue,
-    }: CustomSuggestInputProps
-) => {
+export const CustomSuggestInput = ({
+                                       fieldKey,
+                                       displayText,
+                                       setFieldValue,
+                                       historyItems,
+                                       fontSize,
+                                       borderValue,
+                                   }: CustomSuggestInputProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isAllSelected, setIsAllSelected] = useState(false);
     const [selectedSugIndex, setSelectedSugIndex] = useState<number>(-1);
-    const [dropPosition, setDropPosition] = useState<'down' | 'up'>('down'); // ★ 表示方向の状態
+    const [dropPosition, setDropPosition] = useState<'down' | 'up'>('down');
     const containerRef = useRef<HTMLDivElement>(null);
 
     // 外側クリックでサジェストを閉じる
@@ -40,55 +40,56 @@ export const CustomSuggestInput = (
     }, []);
 
     // 選択範囲の変更（全選択の検知）
-    const handleSelect = (
-        e: React.SyntheticEvent<HTMLInputElement>) => {
+    const handleSelect = (e: React.SyntheticEvent<HTMLInputElement>) => {
         const input = e.currentTarget;
-        if (input.value.length > 0
-            && input.selectionStart === 0
-            && input.selectionEnd === input.value.length
+        if (
+            input.value.length > 0 &&
+            input.selectionStart === 0 &&
+            input.selectionEnd === input.value.length
         ) {
             setIsAllSelected(true);
-            return
+            return;
         }
         setIsAllSelected(false);
     };
+
     // 入力値でフィルタリング
     const filtered = useMemo(() => {
-       return filterListItemObjs(
-        historyItems.map(item => item.value),
-        displayText,
+        return filterListItemObjs(
+            historyItems.map((item) => item.value),
+            displayText,
             "",
-            -1,
-        )
-    }, [historyItems, displayText])
+            -1
+        );
+    }, [historyItems, displayText]);
+
     const filteredObj = useMemo(() => {
-        return renderForFilterText(
-        filtered
-    )},[filtered])
+        return renderForFilterText(filtered);
+    }, [filtered]);
+
     // サジェストを開く最終条件
     const shouldShowSuggest = isOpen && !isAllSelected && filtered.length > 0;
-    // ★ 表示方向を判定する処理（画面の上下余白を計算）
+
+    // 表示方向を判定する処理
     const updateDropPosition = () => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        // 下側の空きスペースが250px未満 かつ 上側のスペースの方が広い場合に「上出し」に設定
-        if (spaceBelow < 250
-            && spaceAbove > spaceBelow) {
+        if (spaceBelow < 250 && spaceAbove > spaceBelow) {
             setDropPosition('up');
-            return
+            return;
         }
         setDropPosition('down');
     };
-    // 開いた時または画面リサイズ時に位置を計算
+
     useEffect(() => {
         if (shouldShowSuggest) {
             updateDropPosition();
         }
     }, [shouldShowSuggest]);
 
-    // 入力値変更や閉じた時に選択インデックスをリセット
+    // 入力テキスト変更または非表示時に選択インデックスをリセット
     useEffect(() => {
         setSelectedSugIndex(-1);
     }, [displayText, isOpen]);
@@ -116,26 +117,31 @@ export const CustomSuggestInput = (
                     setIsOpen(true);
                 }}
                 onKeyDown={(e) => {
-                    if (!shouldShowSuggest) return
-                    switch(true){
-                        case (e.key === 'ArrowDown'): {
+                    if (!shouldShowSuggest) return;
+                    switch (e.key) {
+                        case 'ArrowDown': {
                             e.preventDefault();
-                            setSelectedSugIndex((prev) => (prev < filtered.length - 1 ? prev + 1 : 0));
+                            setSelectedSugIndex((prev) =>
+                                prev < 0 || prev >= filtered.length - 1 ? 0 : prev + 1
+                            );
                             return;
                         }
-                        case (e.key === 'ArrowUp'): {
+                        case 'ArrowUp': {
                             e.preventDefault();
-                            setSelectedSugIndex((prev) => (prev > 0 ? prev - 1 : filtered.length - 1));
+                            setSelectedSugIndex((prev) =>
+                                prev <= 0 ? filtered.length - 1 : prev - 1
+                            );
                             return;
                         }
-                        case (e.key === 'Enter' && selectedSugIndex >= 0): {
+                        case 'Enter': {
+                            if (selectedSugIndex < 0) return;
                             e.preventDefault();
                             e.stopPropagation();
                             setFieldValue(fieldKey, filtered[selectedSugIndex].lineKey);
                             setIsOpen(false);
                             return;
                         }
-                        case (e.key === 'Escape'): {
+                        case 'Escape': {
                             e.preventDefault();
                             e.stopPropagation();
                             setIsOpen(false);
@@ -146,7 +152,7 @@ export const CustomSuggestInput = (
                 className="border rounded w-full"
                 style={{
                     padding: `${borderValue}px`,
-                    fontSize: `${fontSize}px`
+                    fontSize: `${fontSize}px`,
                 }}
             />
 
@@ -154,29 +160,34 @@ export const CustomSuggestInput = (
             {shouldShowSuggest && (
                 <ul
                     className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-60 overflow-y-auto ${
-                        dropPosition === 'up'
-                            ? 'bottom-full mb-1'  // ★ 上側に表示
-                            : 'top-full mt-1'     // ★ 下側に表示
+                        dropPosition === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
                     }`}
                 >
                     {filteredObj.map((obj, index) => {
                         const isSelected = index === selectedSugIndex;
-                        const sgText = obj.lineKey
+                        const sgText = obj.lineKey;
                         return (
                             <li
-                                key={sgText} // ★ item.value だけでOK
+                                key={sgText}
                                 onMouseDown={(e) => {
                                     e.preventDefault();
                                     setFieldValue(fieldKey, sgText);
                                     setIsOpen(false);
                                 }}
-                                onMouseEnter={() => setSelectedSugIndex(index)}
+                                // ⭕️ MouseMove に変更してマウスとキー操作の衝突を防止[cite: 5]
+                                onMouseMove={() => {
+                                    if (selectedSugIndex !== index) {
+                                        setSelectedSugIndex(index);
+                                    }
+                                }}
                                 className={`cursor-pointer ${
-                                    isSelected ? 'bg-blue-100 text-blue-900 font-semibold' : 'hover:bg-blue-50'
+                                    isSelected
+                                        ? 'bg-blue-100 text-blue-900 font-semibold'
+                                        : 'hover:bg-blue-50'
                                 }`}
                                 style={{
                                     fontSize: `${fontSize}px`,
-                                    padding: `${borderValue}px`
+                                    padding: `${borderValue}px`,
                                 }}
                             >
                                 {obj.renderedContent}
