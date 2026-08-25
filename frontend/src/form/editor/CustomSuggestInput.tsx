@@ -88,35 +88,31 @@ export const CustomSuggestInput = ({
     };
 
     useEffect(() => {
-        if (shouldShowSuggest) {
-            updateDropPosition();
-        }
+        if (!shouldShowSuggest) return
+        updateDropPosition();
     }, [shouldShowSuggest]);
 
     // 非表示になったとき（または文字入力による検索時）に選択位置をリセット
     // ※ 矢印キー移動時などに reset されないよう依存配列を調整
     useEffect(() => {
-        if (!isOpen) {
-            setSelectedSugIndex(-1);
-        }
+        if (isOpen) return
+        setSelectedSugIndex(-1);
     }, [isOpen]);
 
     // キーボード操作時のスクロール移動
     useEffect(() => {
-        if (selectedSugIndex >= 0 && itemRefs.current[selectedSugIndex]) {
-            isKeyboardNav.current = true;
-
-            // 手動計算の代わりに scrollIntoView を使用
-            itemRefs.current[selectedSugIndex]?.scrollIntoView({
-                block: 'nearest',   // 上下に収まっていない場合のみ最小限スクロール
-                behavior: 'smooth'  // なめらかにスクロール（不要なら 'auto' に変更）
-            });
-
-            const timer = setTimeout(() => {
-                isKeyboardNav.current = false;
-            }, 100);
-            return () => clearTimeout(timer);
-        }
+        if (selectedSugIndex < 0
+            || !itemRefs.current[selectedSugIndex]
+        ) return
+        isKeyboardNav.current = true;
+        itemRefs.current[selectedSugIndex]?.scrollIntoView({
+            block: 'nearest',   // 上下に収まっていない場合のみ最小限スクロール
+            behavior: 'auto'
+        });
+        const timer = setTimeout(() => {
+            isKeyboardNav.current = false;
+        }, 100);
+        return () => clearTimeout(timer);
     }, [selectedSugIndex]);
 
     return (
