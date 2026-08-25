@@ -26,7 +26,7 @@ export const HeaderDisplay = (
         }
     });
     return (
-        <div className="flex flex-col">
+        <ul className="flex flex-col">
             {/* ★ 固定表示するヘッダー部分 */}
             {headerRenderedObjList.map((obj, index) => {
                 return (
@@ -43,6 +43,6 @@ export const HeaderDisplay = (
                     </li>
                 );
             })}
-        </div>
+        </ul>
     )
 }

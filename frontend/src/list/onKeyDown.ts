@@ -1,143 +1,144 @@
-import {RunCmdAndExitForList, RunCmdForList, RunReloadCmdForList} from "../../wailsjs/go/main/App";
-import {list, network} from "../../wailsjs/go/models";
+import { RunCmdAndExitForList, RunCmdForList, RunReloadCmdForList } from "../../wailsjs/go/main/App";
+import { list } from "../../wailsjs/go/models";
 import ExecuteConfig = list.ExecuteConfig;
-import {RunCmdAndExitForListByMinimise} from "../exit/exit";
+import { RunCmdAndExitForListByMinimise } from "../exit/exit";
+import { outputLineByHidden } from "./libs/outputLineByHidden";
 
-export const onKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    setListItems: React.Dispatch<React.SetStateAction<string[]>>,
-    selectedIndex: number,
-    filteredListItems: string[],
-    setSelectedIndex: React.Dispatch<React.SetStateAction<number>>,
-    setSearchQuery: React.Dispatch<React.SetStateAction<string>>,
-    searchInputRef: React.RefObject<HTMLInputElement>,
-    executes: ExecuteConfig[],
-    execQuit: ExecuteConfig[],
-    reloads: ExecuteConfig[],
-    delimiter: string,
-    headerLines: number,
-    isCycle: boolean,
-    ) => {
+export type OnKeyDownParams = {
+    e: React.KeyboardEvent<HTMLInputElement>;
+    setListItems: React.Dispatch<React.SetStateAction<string[]>>;
+    selectedIndex: number;
+    filteredListItems: string[];
+    setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
+    setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+    searchInputRef: React.RefObject<HTMLInputElement>;
+    executes: ExecuteConfig[];
+    execQuit: ExecuteConfig[];
+    reloads: ExecuteConfig[];
+    delimiter: string;
+    headerLines: number;
+    isCycle: boolean;
+};
+
+export const onKeyDown = (params: OnKeyDownParams) => {
+    const {
+        e,
+        setListItems,
+        selectedIndex,
+        filteredListItems,
+        setSelectedIndex,
+        setSearchQuery,
+        searchInputRef,
+        executes,
+        execQuit,
+        reloads,
+        delimiter,
+        headerLines,
+        isCycle,
+    } = params;
+
     const isAltActive = e.altKey;
-    const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
+    const isModifierKey = ['Alt', 'Shift', 'Control', 'Tab', ' '].includes(e.key);
+
+    // ★ 配列境界外参照を防ぐ安全な取得処理[cite: 8]
+    const getSelectedItem = () => {
+        if (filteredListItems.length === 0) return undefined;
+        const safeIndex = Math.max(0, Math.min(selectedIndex, filteredListItems.length - 1));
+        return filteredListItems[safeIndex];
+    };
+
     if (isAltActive && !isModifierKey) {
-        const pressedKey =
-            (e.code.startsWith('Key') &&
-                e.code.length === 4
-            ) ? e.code.charAt(3).toLowerCase()
-                : e.key.toLowerCase();
+        const pressedKey = (e.code.startsWith('Key') && e.code.length === 4)
+            ? e.code.charAt(3).toLowerCase()
+            : e.key.toLowerCase();
+
+        const selectedItem = getSelectedItem();
+
         const matchedExecute =
             executes?.find(
                 r => r.key.toLowerCase() === pressedKey);
-        if (matchedExecute) {
+        if (matchedExecute && selectedItem) {
             e.preventDefault();
-            const selectedItem = filteredListItems[selectedIndex];
-            RunCmdForList(
-                matchedExecute.shell,
-                selectedItem,
-                delimiter ?? "",
-            );
-            return
+            RunCmdForList(matchedExecute.shell, selectedItem, delimiter ?? "");
+            return;
         }
+
         const matchedExecHidden =
             execQuit?.find(
                 r => r.key.toLowerCase() === pressedKey);
-        if (matchedExecHidden) {
+        if (matchedExecHidden && selectedItem) {
             e.preventDefault();
-            const selectedItem = filteredListItems[selectedIndex];
             RunCmdAndExitForListByMinimise(
-                matchedExecHidden.shell,
-                selectedItem,
-                matchedExecHidden.exitCode,
-                delimiter,
-                "",
+                matchedExecHidden.shell, selectedItem, matchedExecHidden.exitCode, delimiter, ""
             );
-            return
+            return;
         }
-        // getListConfig で取得したデータ（またはスコープ内の変数）から直接探す
-        const matchedReload =
-            reloads?.find(
-                r => r.key.toLowerCase() === pressedKey);
-        if (matchedReload) {
+
+        const matchedReload = reloads?.find(r => r.key.toLowerCase() === pressedKey);
+        if (matchedReload && selectedItem) {
             e.preventDefault();
-            const selectedItem = filteredListItems[selectedIndex];
-            RunReloadCmdForList(
-                matchedReload.shell,
-                selectedItem,
-                delimiter ?? "",
-            ).then((res) => {
-                if (res == undefined) return
-                setListItems(res.split("\n"));
+            RunReloadCmdForList(matchedReload.shell, selectedItem, delimiter ?? "").then((res) => {
+                if (res != null) setListItems(res.split("\n"));
             });
-            return
+            return;
         }
     }
+
     if (filteredListItems.length === 0) return;
+
     switch (true) {
+        case (e.key === 'Enter'): {
+            if (e.nativeEvent.isComposing) return;
+            e.preventDefault();
+
+            const selectedItem = getSelectedItem();
+            if (selectedItem) {
+                setSearchQuery("");
+                outputLineByHidden(selectedItem);
+            }
+            break;
+        }
         case (e.key === 'ArrowDown'): {
             e.preventDefault();
             setSelectedIndex((prev) => {
-                // ボディ部分が存在しない場合はそのまま
                 if (filteredListItems.length <= headerLines) return prev;
-                if (document.activeElement === searchInputRef.current || prev < headerLines) {
-                    return headerLines;
-                }
-                if (prev < filteredListItems.length - 1) {
-                    return prev + 1;
-                } else {
-                    // 一番下にいるとき
-                    return isCycle ? headerLines : prev; // cycle が true なら選択可能な最初の行へ
-                }
-            })
-        }
+                if (prev < headerLines) return headerLines;
+                if (prev < filteredListItems.length - 1) return prev + 1;
+                return isCycle ? headerLines : prev;
+            });
             break;
+        }
         case (e.key === 'ArrowUp'): {
             e.preventDefault();
-            // headerLines 未満には上がらないようにする（最小でも headerLines まで）
             setSelectedIndex((prev) => {
-                // ボディ部分が存在しない場合、あるいはヘッダー行にいる場合はそのまま
                 if (filteredListItems.length <= headerLines || prev <= headerLines) {
                     return isCycle && filteredListItems.length > headerLines
-                        ? filteredListItems.length - 1 // 選択可能な一番上にいるときに上を押したら最後の行へ
+                        ? filteredListItems.length - 1
                         : prev;
                 }
                 return prev - 1;
             });
-        }
             break;
+        }
         case (
             (e.key.length === 1
                 && !e.ctrlKey
                 && !e.metaKey
-                && !e.altKey) ||
+                && !e.altKey
+            ) ||
             e.key === 'Backspace' ||
             e.key === 'Delete'
         ): {
-            // ★ IME変換中（日本語入力の確定前など）の場合は処理しない
             if (e.nativeEvent.isComposing) return;
-            // ★ リストにフォーカスがある状態で文字キーが押されたら、
-            // 瞬時に検索窓にフォーカスを戻し、入力を邪魔しないようにする
-            e.preventDefault();
             searchInputRef.current?.focus();
-            switch (true) {
-                case e.key === 'Backspace': {
-                    // Backspaceの場合は検索クエリの末尾を1文字削る
-                    setSearchQuery(prev => prev.slice(0, -1));
-                }
-                    break;
-                case (e.key === 'Delete'): {
-                    // Deleteの場合は必要に応じて全クリアにするか、何もしないなどをお好みで設定できます
-                    // 今回はBackspaceと同様に末尾を削る動作にしておくと自然です
-                    setSearchQuery(prev => prev.slice(0, -1));
-                }
-                    break;
-                default: {
-                    // 通常の文字入力
-                    setSearchQuery(prev => prev + e.key);
-                }
-                    break;
+
+            if (e.key === 'Backspace'
+                || e.key === 'Delete') {
+                setSearchQuery(prev => prev.slice(0, -1));
+            } else {
+                setSearchQuery(prev => prev + e.key);
             }
-        }
             break;
+        }
     }
-}
+};

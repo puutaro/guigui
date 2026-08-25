@@ -1,65 +1,64 @@
-import {outputLineByHidden} from "./libs/outputLineByHidden";
-import {renderForFilterText} from "../libs/renderForFilterText";
+import { outputLineByHidden } from "./libs/outputLineByHidden";
+import { renderForFilterText } from "../libs/renderForFilterText";
 
 export type FilterDisplayProps = {
-    listItemRefs:  React.MutableRefObject<(HTMLLIElement | null)[]>;
+    listItemRefs: React.MutableRefObject<(HTMLLIElement | null)[]>;
     filterItemOpjs: {
-        lineKey: string
-        nthKey: string
-        matchedIndex: number[]
-    }[],
+        lineKey: string;
+        nthKey: string;
+        matchedIndex: number[];
+    }[];
     setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
     setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
+    selectedIndex: number; // ★ 現在の選択インデックスを受け取る
     borderValue: number;
-    headerLines: number; // ★ ヘッダー行数を追加
-}
+    headerLines: number;
+};
 
-export const FilterDisplay = (
-    {
-        listItemRefs,
-        filterItemOpjs,
-        setSearchQuery,
-        setSelectedIndex,
-        borderValue,
-        headerLines,
-    }: FilterDisplayProps
-) => {
-    // ボディ用の描画オブジェクトリスト
-    const bodyRenderedObjList = renderForFilterText(filterItemOpjs)
+export const FilterDisplay = ({
+                                  listItemRefs,
+                                  filterItemOpjs,
+                                  setSearchQuery,
+                                  setSelectedIndex,
+                                  selectedIndex,
+                                  borderValue,
+                                  headerLines,
+                              }: FilterDisplayProps) => {
+    const bodyRenderedObjList = renderForFilterText(filterItemOpjs);
+
     return (
-            <ul className="flex flex-col">
-                {bodyRenderedObjList.map((obj, bodyIndex) => {
-                    // 全体でのインデックス（headerLines分をオフセット）
-                    const actualIndex = headerLines + bodyIndex;
-                    return (
-                        <li
-                            key={`body-${bodyIndex}`}
-                            tabIndex={0}
-                            ref={(el) => (listItemRefs.current[actualIndex] = el)}
-                            className="hover:bg-blue-50 focus:bg-blue-100 focus:outline-none rounded cursor-pointer border-transparent focus:border-blue-400"
-                            onClick={() => {
-                                setSelectedIndex(actualIndex);
-                                listItemRefs.current[actualIndex]?.focus();
-                            }}
-                            onDoubleClick={() => {
-                                setSearchQuery("")
-                                outputLineByHidden(obj.lineKey ?? "");
-                            }}
-                            onKeyDown={(e)=>{
-                                if (e.key !== 'Enter') return
-                                e.preventDefault()
-                                setSearchQuery("")
-                                outputLineByHidden(obj.lineKey ?? "");
-                            }}
-                            style={{
-                                padding: `${borderValue}px`,
-                                margin: `calc(${borderValue}px /  2)`,
-                            }}
-                        >
-                            {obj.renderedContent}
-                        </li>
-                    );
-                })}
-            </ul>
-    )
-}
+        <ul className="flex flex-col">
+            {bodyRenderedObjList.map((obj, bodyIndex) => {
+                const actualIndex = headerLines + bodyIndex;
+                const isSelected = selectedIndex === actualIndex;
+
+                return (
+                    <li
+                        key={`body-${bodyIndex}`}
+                        tabIndex={-1} // ★ タブフォーカスを無効化
+                        ref={(el) => (listItemRefs.current[actualIndex] = el)}
+                        // ★ selectedIndex と一致している時に「フォーカス時と同じスタイル」を適用
+                        className={`rounded cursor-pointer border-transparent hover:bg-blue-50 ${
+                            isSelected ? "bg-blue-100 border-blue-400 font-semibold" : ""
+                        }`}
+                        onMouseDown={(e) => {
+                            // ★ クリック時に input からフォーカスが外れるのを防ぐ
+                            e.preventDefault();
+                            setSelectedIndex(actualIndex);
+                        }}
+                        onDoubleClick={() => {
+                            setSearchQuery("");
+                            outputLineByHidden(obj.lineKey ?? "");
+                        }}
+                        style={{
+                            padding: `${borderValue}px`,
+                            margin: `calc(${borderValue}px / 2)`,
+                        }}
+                    >
+                        {obj.renderedContent}
+                    </li>
+                );
+            })}
+        </ul>
+    );
+};

@@ -62,14 +62,18 @@ export const  ListComponent =
         const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
         // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
         useEffect(() => {
-          // 少しだけタイミングをずらすか、DOMの描画完了を待ってフォーカスする
-          requestAnimationFrame(() => {
-            const targetListElement = listItemRefs.current[selectedIndex];
-            if (!targetListElement) return
-            targetListElement.focus();
-          });
+            requestAnimationFrame(() => {
+                const targetListElement = listItemRefs.current[selectedIndex];
+                if (targetListElement) {
+                    // スクロールエリア内に入ってくるよう表示位置だけ調整
+                    targetListElement.scrollIntoView({ block: 'nearest' });
+                }
+                // フォーカスは常に input 要素へ
+                searchInputRef.current?.focus();
+            });
         }, [selectedIndex, filteredBodyItemObjs]);
-            return (
+        listItemRefs.current = [];
+        return (
             <div
                 id="list-view"
                 // className="flex flex-col h-full overflow-hidden w-full"
@@ -77,25 +81,6 @@ export const  ListComponent =
                 style={{
                     overscrollBehavior: 'none' ,
                 }}
-                tabIndex={0}
-                onKeyDown={(e) => {
-                    onKeyDown(
-                        e,
-                        setListItems,
-                        selectedIndex,
-                        headerAndFilteredBodyListItems,
-                        setSelectedIndex,
-                        setSearchQuery,
-                        searchInputRef,
-                        listConfig?.executes ?? [],
-                        listConfig?.execQuits ?? [],
-                        listConfig?.reloads ?? [],
-                        listConfig?.delimiter || "",
-                        headerLines,
-                        listConfig?.cycle ?? false,
-                    )
-                }
-                }
             >
             <div
                 className="flex-shrink-0 bg-white z-10 w-full flex flex-col box-border"
@@ -112,23 +97,34 @@ export const  ListComponent =
                     </h1>
                 )}
                 <input
-                    ref={searchInputRef} // ★ Refを紐付け
+                    ref={searchInputRef}
                     type="text"
                     placeholder="Type to search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className=" border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    className="border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
-                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                            e.preventDefault();
-                        }
+                        onKeyDown({
+                            e,
+                            setListItems,
+                            selectedIndex,
+                            filteredListItems: headerAndFilteredBodyListItems,
+                            setSelectedIndex,
+                            setSearchQuery,
+                            searchInputRef,
+                            executes: listConfig?.executes ?? [],
+                            execQuit: listConfig?.execQuits ?? [],
+                            reloads: listConfig?.reloads ?? [],
+                            delimiter: listConfig?.delimiter || "",
+                            headerLines,
+                            isCycle: listConfig?.cycle ?? false,
+                        })
                     }}
                     style={{
                         padding: `${borderValue}px`,
-                        margin: `calc(${borderValue}px /  2)`,
+                        margin: `calc(${borderValue}px / 2)`,
                     }}
-                />
-                {/* リストのヘッダー行もここで一緒に固定描画 */}
+                />                {/* リストのヘッダー行もここで一緒に固定描画 */}
                 {headerItemObjs.length > 0 && (
                     <HeaderDisplay
                         listItemRefs={listItemRefs}
@@ -159,10 +155,10 @@ export const  ListComponent =
                         filterItemOpjs={filteredBodyItemObjs}
                         setSearchQuery={setSearchQuery}
                         setSelectedIndex={setSelectedIndex}
+                        selectedIndex={selectedIndex} // ★ 追加
                         borderValue={borderValue}
                         headerLines={headerLines}
-                    />
-                )}
+                    />                )}
             </div>
         </div>
         </div>
