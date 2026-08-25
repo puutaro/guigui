@@ -230,6 +230,30 @@ func getIdFromCmd(
 	}
 	return ""
 }
+func getIsGuiModeFromCmd(
+	formCmd *form.FormCmd,
+	listCmd *list.ListCmd,
+) bool {
+	switch {
+	case formCmd != nil:
+		return formCmd.GuiMode
+	case listCmd != nil:
+		return listCmd.GuiMode
+	}
+	return false
+}
+func getisQuitGuiFromCmd(
+	formCmd *form.FormCmd,
+	listCmd *list.ListCmd,
+) bool {
+	switch {
+	case formCmd != nil:
+		return formCmd.QuitGui
+	case listCmd != nil:
+		return listCmd.QuitGui
+	}
+	return false
+}
 
 func (a *App) sendAllQuitSignal(
 	ctx context.Context,

@@ -2,9 +2,11 @@ package args
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-arg"
@@ -22,11 +24,8 @@ type AppConfig struct {
 	CmdName      string
 	WindowConfig window.WindowOptions
 
-	FormCmd   *form.FormCmd
-	ListCmd   *list.ListCmd
-	IsGuiMode bool
-	IsQuitGui bool
-	// UniqueId  string
+	FormCmd *form.FormCmd
+	ListCmd *list.ListCmd
 }
 
 func (CLI) Version() string {
@@ -43,12 +42,12 @@ func Parse() (*AppConfig, error) {
 	arg.MustParse(&args)
 	switch {
 	case args.Form != nil:
-		if strings.TrimSpace(args.Form.Id) == "" {
-			return nil, fmt.Errorf("Error: --id must not be blank string")
+		if err := validateId(args.Form.Id); err != nil {
+			return nil, err
 		}
 	case args.List != nil:
-		if strings.TrimSpace(args.List.Id) == "" {
-			return nil, fmt.Errorf("Error: --id must not be blank string")
+		if err := validateId(args.List.Id); err != nil {
+			return nil, err
 		}
 	}
 	cmdName := "form"
@@ -76,29 +75,64 @@ func Parse() (*AppConfig, error) {
 			args.List.IsStdin = true
 		}
 	}
-	isQuitGui := false
-	isGuiMode := false
-	// uniqueId := ""
 	switch {
 	case formCmd != nil:
 		windowConfig = formCmd.WindowOptions
-		isGuiMode = formCmd.GuiMode
-		isQuitGui = formCmd.QuitGui
-		// uniqueId = formCmd.Id
 	case listCmd != nil:
 		windowConfig = listCmd.WindowOptions
 		cmdName = "list"
-		isGuiMode = listCmd.GuiMode
-		isQuitGui = listCmd.QuitGui
-		// uniqueId = listCmd.Id
 	}
 	return &AppConfig{
 		CmdName:      cmdName,
 		WindowConfig: windowConfig,
 		FormCmd:      args.Form,
 		ListCmd:      args.List,
-		IsGuiMode:    isGuiMode,
-		IsQuitGui:    isQuitGui,
-		// UniqueId:     uniqueId,
 	}, nil
+}
+
+func validateId(path string) error {
+	// 1. 空文字チェック
+	if strings.TrimSpace(path) == "" {
+		return errors.New("id cannot be empty")
+	}
+	// 2. パス全体の長さチェック (通常は4096バイト未満)
+	if len(path) > 4096 {
+		return errors.New("id is too long (exceeds 4096 bytes)")
+	}
+	// 3. 各文字単位での危険文字チェック
+	for i, r := range path {
+		switch {
+		// ヌル文字 (パスの途中で途切れる原因)
+		case r == '\x00':
+			return fmt.Errorf("id contains null character at index %d", i)
+		// 改行文字 (LF, CR。スクリプトやログのパースを壊す)
+		case r == '\n' || r == '\r':
+			return fmt.Errorf("id contains newline character at index %d", i)
+		// シェルのメタ文字・制御文字（インジェクションやパース崩れを防ぐため厳格に弾く場合）
+		// 必要に応じて許可する文字に合わせて調整してください
+		case r == ';' || r == '&' || r == '|' || r == '`' || r == '$' || r == '<' || r == '>':
+			return fmt.Errorf("id contains dangerous shell meta character '%c' at index %d", r, i)
+		// ダブルクォーテーション・シングルクォーテーション
+		case r == '"' || r == '\'':
+			return fmt.Errorf("id contains quote character '%c' at index %d", r, i)
+		}
+	}
+	// 4. 個別のファイル名セグメントごとのチェック（必要に応じて）
+	// パスをスラッシュで分割して、各要素をチェック
+	segments := strings.Split(path, "/")
+	for _, seg := range segments {
+		// セグメントが長すぎる場合（通常は255バイト以下）
+		if len(seg) > 255 {
+			return errors.New("id is too long (exceeds 255 bytes)")
+		}
+		// 「.」や「..」単体の混入を厳しく弾きたい場合
+		if seg == "." || seg == ".." {
+			return errors.New("id segment cannot be '.' or '..'")
+		}
+	}
+	// 不正なUTF-8シーケンスが含まれていないかチェック
+	if !utf8.ValidString(path) {
+		return errors.New("id contains invalid UTF-8 sequence")
+	}
+	return nil
 }
