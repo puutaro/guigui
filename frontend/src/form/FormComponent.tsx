@@ -178,7 +178,10 @@ export const FormComponent = ({
 
     const firstFocusableIndex = formConfig?.fields.findIndex(field => 'LBL' != field.type) ?? -1;
     const isExecutingRef = useRef(false);
-
+    const fontSize = formConfig?.fontSize ?? 10
+    const titleFontSize = (fontSize * 110) / 100
+    const titlePadding = (borderValue * 110) / 100
+    const labelFontSize = (fontSize * 3) / 4
     return (
         <div
             id="form-view"
@@ -188,8 +191,8 @@ export const FormComponent = ({
                 <h1
                     className="font-bold text-blue-900 flex-shrink-0"
                     style={{
-                        fontSize: "calc(1em * 110 / 100)",
-                        padding: "calc(1em * 110 / 100)",
+                        fontSize: `${titleFontSize}px`,
+                        padding: `${titlePadding}px`,
                     }}
                 >
                     {formConfig?.text ?? ""}
@@ -227,7 +230,7 @@ export const FormComponent = ({
                                         className="font-bold mb-1"
                                         style={{
                                             display: `${labelDisplayValue}`,
-                                            fontSize: "calc(1em * 3 / 4)",
+                                            fontSize: `${labelFontSize}px`,
                                             padding: `${borderValue}px`
                                         }}
                                     >
@@ -249,6 +252,7 @@ export const FormComponent = ({
                                             displayText={formValues[key] ?? field.defaultValue ?? ""}
                                             setFieldValue={setFieldValue}
                                             historyItems={historyMap[field.label] || []}
+                                            fontSize={fontSize}
                                             borderValue={borderValue}
                                         />
                                     )}

@@ -11,6 +11,7 @@ export const saveAllTxtHistory = (
 
 ) => {
     if (!currentConfig) return;
+    const defaultSuggestLimit = 20
     setHistoryMap((prev) => {
         const nextMap = { ...prev };
         const now = Date.now();
@@ -42,11 +43,16 @@ export const saveAllTxtHistory = (
                 existingList.push({ value: val, timestamp: now });
             }
             // タイムスタンプ降順（新しい順）にソート
-            existingList.sort((a, b) => b.timestamp - a.timestamp);
-            nextMap[fieldLabel] = existingList;
+            const limitedExistList = existingList
+                .sort(
+                    (a, b) =>
+                        b.timestamp - a.timestamp
+                )
+                .slice(0, defaultSuggestLimit);
+            nextMap[fieldLabel] = limitedExistList;
             // ★ フィールドごとに独立した localStorage キーで永続化保存
             try {
-                localStorage.setItem(storageKey, JSON.stringify(existingList));
+                localStorage.setItem(storageKey, JSON.stringify(limitedExistList));
             } catch (error) {
                 console.error(`Failed to save suggest history to ${storageKey}:`, error);
             }

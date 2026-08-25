@@ -1,4 +1,4 @@
-import {makeDisplayText} from "./libs/makeDisplayText";
+import {makeDisplayText} from "../list/libs/makeDisplayText";
 
 export const filterListItemObjs = (
     bodyItems: string[],

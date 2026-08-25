@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { list } from '../../wailsjs/go/models'
-import { filterListItemObjs } from './filer';
+import { filterListItemObjs } from '../libs/filer';
 import {onKeyDown} from "./onKeyDown";
 import {FilterDisplay} from "./FilterDisplay";
 import {makeDisplayText} from "./libs/makeDisplayText";
