@@ -1,5 +1,7 @@
 import { SuggestHistoryItem } from "../FormComponent";
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {filterListItemObjs} from "../../libs/filer";
+import {renderForFilterText} from "../../libs/renderForFilterText";
 
 export type CustomSuggestInputProps = {
     fieldKey: string;
@@ -51,11 +53,18 @@ export const CustomSuggestInput = (
         setIsAllSelected(false);
     };
     // 入力値でフィルタリング
-    const filtered = historyItems.map((item) => {
-       return item.value
-    }).filter(sgText =>
-        sgText.toLowerCase().includes((displayText || '').toLowerCase())
-    );
+    const filtered = useMemo(() => {
+       return filterListItemObjs(
+        historyItems.map(item => item.value),
+        displayText,
+            "",
+            -1,
+        )
+    }, [historyItems, displayText])
+    const filteredObj = useMemo(() => {
+        return renderForFilterText(
+        filtered
+    )},[filtered])
     // サジェストを開く最終条件
     const shouldShowSuggest = isOpen && !isAllSelected && filtered.length > 0;
     // ★ 表示方向を判定する処理（画面の上下余白を計算）
@@ -122,7 +131,7 @@ export const CustomSuggestInput = (
                         case (e.key === 'Enter' && selectedSugIndex >= 0): {
                             e.preventDefault();
                             e.stopPropagation();
-                            setFieldValue(fieldKey, filtered[selectedSugIndex]);
+                            setFieldValue(fieldKey, filtered[selectedSugIndex].lineKey);
                             setIsOpen(false);
                             return;
                         }
@@ -150,8 +159,9 @@ export const CustomSuggestInput = (
                             : 'top-full mt-1'     // ★ 下側に表示
                     }`}
                 >
-                    {filtered.map((sgText, index) => {
+                    {filteredObj.map((obj, index) => {
                         const isSelected = index === selectedSugIndex;
+                        const sgText = obj.lineKey
                         return (
                             <li
                                 key={sgText} // ★ item.value だけでOK
@@ -169,7 +179,7 @@ export const CustomSuggestInput = (
                                     padding: `${borderValue}px`
                                 }}
                             >
-                                {sgText}
+                                {obj.renderedContent}
                             </li>
                         );
                     })}

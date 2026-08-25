@@ -1,4 +1,5 @@
 import {outputLineByHidden} from "./libs/outputLineByHidden";
+import {renderForFilterText} from "../libs/renderForFilterText";
 
 export type FilterDisplayProps = {
     listItemRefs:  React.MutableRefObject<(HTMLLIElement | null)[]>;
@@ -24,48 +25,12 @@ export const FilterDisplay = (
     }: FilterDisplayProps
 ) => {
     // ボディ用の描画オブジェクトリスト
-    const bodyRenderedObjList = filterItemOpjs.map((obj) => {
-        let displayText = obj.nthKey
-        let renderedContent: React.ReactNode = displayText;
-        let matchIndices = obj.matchedIndex
-        const isNotHedder = false
-        if (matchIndices.length <= 0) return {
-            renderedContent: renderedContent,
-            lineKey: obj.lineKey,
-            isHeader: isNotHedder,
-        };
-        const parts: React.ReactNode[] = [];
-        let lastIdx = 0;
-        matchIndices.forEach((matchIdx, i) => {
-            if (matchIdx > lastIdx) {
-                parts.push(displayText.substring(lastIdx, matchIdx));
-            }
-            parts.push(
-                <strong key={i} className="font-extrabold text-blue-600 bg-blue-50">
-                    {displayText.substring(matchIdx, matchIdx + 1)}
-                </strong>
-            );
-            lastIdx = matchIdx + 1;
-        });
-        if (lastIdx < displayText.length) {
-            parts.push(displayText.substring(lastIdx));
-        }
-        renderedContent = <>{parts}</>;
-
-        return {
-            renderedContent: renderedContent,
-            lineKey: obj.lineKey,
-            isHeader: isNotHedder,
-        }
-    });
-
+    const bodyRenderedObjList = renderForFilterText(filterItemOpjs)
     return (
             <ul className="flex flex-col">
                 {bodyRenderedObjList.map((obj, bodyIndex) => {
                     // 全体でのインデックス（headerLines分をオフセット）
                     const actualIndex = headerLines + bodyIndex;
-                    const isHeader = obj.isHeader;
-
                     return (
                         <li
                             key={`body-${bodyIndex}`}
