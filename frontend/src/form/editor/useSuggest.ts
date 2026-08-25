@@ -18,8 +18,7 @@ export const useInitSuggest = (
                 formConfig.id,
                 formConfig.subId,
                 fieldLabel,
-        ); // 独立した localStorage キー
-
+        );
             try {
                 const savedData = localStorage.getItem(storageKey);
                 if (savedData) {
