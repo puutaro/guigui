@@ -74,13 +74,21 @@ export const CustomSuggestInput = ({
     // サジェストを開く最終条件
     const shouldShowSuggest = isOpen && !isAllSelected && filtered.length > 0;
 
+    const sgMaxHeight = useMemo(()=>{
+        const displayHeight = window.screen.height * 0.4
+        const limitHeight = 400
+        if(0 < displayHeight
+            && displayHeight < limitHeight
+        ) return displayHeight
+        return limitHeight
+    }, []);
     // 表示方向を判定する処理
     const updateDropPosition = () => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-        if (spaceBelow < 400 && spaceAbove > spaceBelow) {
+        if (spaceBelow < sgMaxHeight && spaceAbove > spaceBelow) {
             setDropPosition('up');
             return;
         }
@@ -183,9 +191,12 @@ export const CustomSuggestInput = ({
             {shouldShowSuggest && (
                 <ul
                     ref={listRef}
-                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg max-h-96 overflow-y-auto py-1 ${
+                    className={`absolute z-50 left-0 right-0 bg-white border rounded shadow-lg overflow-y-auto py-1 ${
                         dropPosition === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
                     }`}
+                    style={{
+                        maxHeight: `${sgMaxHeight}px`,
+                    }}
                 >
                     {filteredObj.map((obj, index) => {
                         const isSelected = index === selectedSugIndex;
