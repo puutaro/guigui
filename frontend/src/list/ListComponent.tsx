@@ -20,6 +20,9 @@ export const  ListComponent =
         const [listItems, setListItems] = useState<string[]>([]);
         const [searchQuery, setSearchQuery] = useState("");
         const [selectedIndex, setSelectedIndex] = useState(0);
+        useEffect(() => {
+            setSearchQuery("");
+        }, [listConfig]);
         // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
         const headerLines = listConfig?.headerLines ?? 0;
         useEffect(() => {

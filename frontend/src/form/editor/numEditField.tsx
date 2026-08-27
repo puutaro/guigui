@@ -49,7 +49,7 @@ export const NumEditField = ({
       <button
         type="button"
         onClick={() => handleStep(-1)}
-        className="border-t border-b border-r bg-gray-100 hover:bg-gray-200 text-sm active:bg-gray-300"
+        className="border-t border-b border-r bg-blue-50 hover:bg-blue-100 active:bg-blue-200"
         style={{ padding: `${borderValue}px` }}
       >
         -
@@ -57,7 +57,7 @@ export const NumEditField = ({
       <button
         type="button"
         onClick={() => handleStep(1)}
-        className="border-t border-b border-r rounded-r bg-gray-100 hover:bg-gray-200 text-sm active:bg-gray-300"
+        className="border-t border-b border-r rounded-r bg-blue-50 hover:bg-blue-100 active:bg-blue-200"
         style={{ padding: `${borderValue}px` }}
       >
         +

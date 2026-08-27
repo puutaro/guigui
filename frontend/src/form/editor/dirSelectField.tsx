@@ -23,7 +23,7 @@ export const DirSelectField = ({
           type="text" 
           value={formValues[fieldKey] ?? field.defaultValue ?? ""} 
           onChange={(e) => setFieldValue(fieldKey, e.target.value)}
-          className="border rounded flex-1 bg-gray-50"
+          className="border rounded flex-1"
           style={{ padding: `${borderValue}px` }}
         />
         <button
@@ -32,7 +32,7 @@ export const DirSelectField = ({
             const filePath = await SelectDir(field.label || "Select Dir");
             if (filePath) setFieldValue(fieldKey, filePath);
           }}
-          className="border rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-sm px-3 py-1"
+          className="border rounded bg-blue-50 hover:bg-blue-100 active:bg-blue-200 px-3 py-1"
           style={{ padding: `${borderValue}px` }}
         >
           dir...

@@ -26,7 +26,7 @@ export const BtnField = ({
             console.error("Failed to run cmd by btn:", err);
           }
         }}
-      className="border rounded bg-gray-100 hover:bg-gray-200 text-left active:bg-gray-300"
+      className="border rounded bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-left "
       style={{ 
         padding: `${borderValue}px`,
         textAlign: 'center',

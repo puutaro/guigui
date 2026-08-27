@@ -12,6 +12,7 @@ import {useInitSuggest} from "./editor/useSuggest";
 import {makeKey} from "./editor/makeKey";
 import {CustomSuggestInput} from "./editor/CustomSuggestInput"
 import {WriteStderr, WriteStdout} from "../../wailsjs/go/main/App";
+import {CustomSelectField} from "./editor/CustomSelectField";
 
 // サジェスト用の履歴データ型
 export type SuggestHistoryItem = {
@@ -257,17 +258,13 @@ export const FormComponent = ({
                                         />
                                     )}
                                     {field.type === 'CB' && (
-                                        <select
-                                            value={formValues[key] ?? field.defaultValue ?? ""}
-                                            onChange={(e) => setFieldValue(key, e.target.value)}
-                                            className="border rounded"
-                                            style={{ padding: `${borderValue}px` }}
-                                        >
-                                            {field.items?.map((item) => (
-                                                <option key={item} value={item}>{item}</option>
-                                            ))}
-                                        </select>
-                                    )}
+                                        <CustomSelectField
+                                            field={field}
+                                            fieldKey={key}
+                                            formValues={formValues}
+                                            setFieldValue={setFieldValue}
+                                            borderValue={borderValue}
+                                        />                                    )}
                                     {(btnList as readonly string[]).includes(field.type) && (
                                         <BtnField
                                             field={field}
