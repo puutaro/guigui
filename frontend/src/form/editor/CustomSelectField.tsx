@@ -136,7 +136,7 @@ export const CustomSelectField = ({
                                 }}
                                 className={`cursor-pointer whitespace-normal break-all leading-normal ${
                                     isFocused
-                                        ? 'bg-blue-100 text-blue-900'
+                                        ? 'font-semibold bg-blue-100 text-blue-900'
                                         : isSelected
                                             ? 'bg-blue-50 text-blue-800'
                                             : ''
