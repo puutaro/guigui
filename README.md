@@ -13,6 +13,12 @@ npm install
 
 [Here](scripts) you can find useful scripts for building on different platforms and Wails CLI installation.
 
+## Install
+
+```
+
+```
+
 ## Live Development
 
 To run in live development mode, run `wails dev` in the project directory. In another terminal, go into the `frontend`
