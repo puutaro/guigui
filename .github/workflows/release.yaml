@@ -107,10 +107,15 @@ jobs:
       - name: Install Linux Dependencies (WebKit2GTK & Cross-Compiler)
         if: matrix.goos == 'linux'
         run: |
+          sudo dpkg --add-architecture amd64
+          sudo dpkg --add-architecture arm64
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev || sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
-          if [ "${{ matrix.goarch }}" = "arm64" ]; then
+          
+          if [ "${{ matrix.goarch }}" = "amd64" ]; then
+            sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.1-dev:amd64 || sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.0-dev:amd64
+          elif [ "${{ matrix.goarch }}" = "arm64" ]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+            sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 || sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.0-dev:arm64
           fi
 
       - name: Build Wails App
@@ -119,8 +124,16 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '1'
         run: |
-          if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "arm64" ]; then
-            export CC=aarch64-linux-gnu-gcc
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            if [ "${{ matrix.goarch }}" = "arm64" ]; then
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+            else
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+            fi
           fi
 
           BUILD_TAGS=""
@@ -209,7 +222,7 @@ jobs:
           files: release_files/*
           tag_name: ${{ env.TAG_VERSION }}
           name: Release ${{ env.TAG_VERSION }}
-          body_path: ${{ env.NOTE_PATH != '' && env.NOTE_PATH || '' }}
+          body_path: ${{ env.NOTE_`PATH != '' && env.NOTE_PATH || '' }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
