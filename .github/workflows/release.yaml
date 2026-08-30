@@ -107,30 +107,8 @@ jobs:
       - name: Install Linux Dependencies (WebKit2GTK & Cross-Compiler)
         if: matrix.goos == 'linux'
         run: |
-          sudo dpkg --add-architecture arm64
-          
-          # Restrict default Ubuntu sources to amd64 so they don't throw 404s for arm64
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i '/^Types:/i Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources || true
-          fi
-          
-          # Configure ports.ubuntu.com explicitly for arm64 packages
-          sudo tee /etc/apt/sources.list.d/arm64.sources << 'EOF'
-          Types: deb
-          URIs: https://ports.ubuntu.com/ubuntu-ports
-          Suites: noble noble-updates noble-backports noble-security
-          Components: main restricted universe multiverse
-          Architectures: arm64
-          EOF
-
           sudo apt-get update
-          
-          if [ "${{ matrix.goarch }}" = "amd64" ]; then
-            sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.1-dev:amd64
-          elif [ "${{ matrix.goarch }}" = "arm64" ]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-            sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
-          fi
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential
 
       - name: Build Wails App
         env:
@@ -138,20 +116,18 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '1'
         run: |
+          BUILD_TAGS=""
           if [ "${{ matrix.goos }}" = "linux" ]; then
-            if [ "${{ matrix.goarch }}" = "arm64" ]; then
-              export CC=aarch64-linux-gnu-gcc
-              export CXX=aarch64-linux-gnu-g++
-              export PKG_CONFIG_PATH=""
-              export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+            if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
+              BUILD_TAGS="-tags webkit2_41"
+            elif pkg-config --exists webkit2gtk-4.0 2>/dev/null; then
+              BUILD_TAGS="-tags webkit2_40"
             else
-              export PKG_CONFIG_PATH=""
-              export PKG_CONFIG_LIBDIR=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+              BUILD_TAGS="-tags webkit2_41"
             fi
           fi
-
-          echo "Building with tags: -tags webkit2_41 for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
-          wails build -tags webkit2_41 --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
+          echo "Building with tags: $BUILD_TAGS for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
+          wails build $BUILD_TAGS --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
 
       - name: Rename and Prepare Binary Artifacts
         run: |
