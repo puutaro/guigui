@@ -118,13 +118,11 @@ jobs:
               sudo sed -i '/^Types:/i Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources || true
             fi
             
-            sudo tee /etc/apt/sources.list.d/arm64.sources << 'EOF'
-Types: deb
-URIs: https://ports.ubuntu.com/ubuntu-ports
-Suites: noble noble-updates noble-backports noble-security
-Components: main restricted universe multiverse
-Architectures: arm64
-EOF
+            echo "Types: deb" | sudo tee /etc/apt/sources.list.d/arm64.sources
+            echo "URIs: https://ports.ubuntu.com/ubuntu-ports" | sudo tee -a /etc/apt/sources.list.d/arm64.sources
+            echo "Suites: noble noble-updates noble-backports noble-security" | sudo tee -a /etc/apt/sources.list.d/arm64.sources
+            echo "Components: main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.sources
+            echo "Architectures: arm64" | sudo tee -a /etc/apt/sources.list.d/arm64.sources
 
             sudo apt-get update
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
@@ -222,14 +220,21 @@ EOF
           ls -la release_files/
 
       - name: Create GitHub Release and Upload Binaries
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release_files/*
-          tag_name: ${{ env.TAG_VERSION }}
-          name: Release ${{ env.TAG_VERSION }}
-          body_path: ${{ env.NOTE_PATH != '' && env.NOTE_PATH || '' }}
-          fail_on_unmatched_files: true
-          draft: false
-          prerelease: false
+        run: |
+          ARGS=("create" "${{ env.TAG_VERSION }}" "--title" "Release ${{ env.TAG_VERSION }}" --draft=false --prerelease=false)
+          
+          if [ -n "${{ env.NOTE_PATH }}" ]; then
+            ARGS+=("--notes-file" "${{ env.NOTE_PATH }}")
+          else
+            ARGS+=("--generate-notes")
+          fi
+          
+          for f in release_files/*; do
+            if [ -f "$f" ]; then
+              ARGS+=("$f")
+            fi
+          done
+          
+          gh release create "${ARGS[@]}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
