@@ -124,6 +124,13 @@ jobs:
             if [ "${{ matrix.goarch }}" = "arm64" ]; then
               export CC=aarch64-linux-gnu-gcc
               export CXX=aarch64-linux-gnu-g++
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR="/usr/aarch64-linux-gnu/lib/pkgconfig:/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+            else
+              export CC=gcc
+              export CXX=g++
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
             fi
           fi
 
