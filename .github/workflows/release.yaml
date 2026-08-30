@@ -107,8 +107,22 @@ jobs:
       - name: Install Linux Dependencies (WebKit2GTK & Cross-Compiler)
         if: matrix.goos == 'linux'
         run: |
-          sudo dpkg --add-architecture amd64
           sudo dpkg --add-architecture arm64
+          
+          # Restrict default Ubuntu sources to amd64 so they don't throw 404s for arm64
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+            sudo sed -i '/^Types:/i Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources || true
+          fi
+          
+          # Configure ports.ubuntu.com explicitly for arm64 packages
+          sudo tee /etc/apt/sources.list.d/arm64.sources << 'EOF'
+          Types: deb
+          URIs: https://ports.ubuntu.com/ubuntu-ports
+          Suites: noble noble-updates noble-backports noble-security
+          Components: main restricted universe multiverse
+          Architectures: arm64
+          EOF
+
           sudo apt-get update
           
           if [ "${{ matrix.goarch }}" = "amd64" ]; then
