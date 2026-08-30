@@ -1,3 +1,4 @@
+//go:generate sh -c "sh ./gen_guigui_info.sh"
 package main
 
 import (

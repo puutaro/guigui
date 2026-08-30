@@ -16,7 +16,8 @@ npm install
 ## Install
 
 ```
-
+https://raw.githubusercontent.com/puutaro/guigui/refs/heads/master/install.sh \
+| sh
 ```
 
 ## Live Development
