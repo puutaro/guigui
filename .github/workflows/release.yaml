@@ -1,0 +1,209 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      raw_version: ${{ steps.get_version.outputs.raw_version }}
+      tag_version: ${{ steps.get_version.outputs.tag_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from configuration file
+        id: get_version
+        run: |
+          CONFIG_FILE="guigui.toml"
+          if [ -f "yomel.toml" ]; then
+            CONFIG_FILE="yomel.toml"
+          elif [ -f "guigui.toml" ]; then
+            CONFIG_FILE="guigui.toml"
+          fi
+
+          echo "Using config file: $CONFIG_FILE"
+
+          RAW_VERSION=$(python3 -c '
+          import sys, os
+          if sys.version_info >= (3, 11):
+              import tomllib
+          else:
+              import tomli as tomllib
+          
+          config_file = sys.argv[1]
+          with open(config_file, "rb") as f:
+              data = tomllib.load(f)
+          
+          version = ""
+          for key in ["guigui", "yomel", "app"]:
+              if key in data and "version" in data[key]:
+                  version = data[key]["version"]
+                  break
+          if not version and "version" in data:
+              version = data["version"]
+          print(version)
+          ' "$CONFIG_FILE")
+
+          if [ -z "$RAW_VERSION" ]; then
+            echo "Error: Version could not be extracted from $CONFIG_FILE"
+            exit 1
+          fi
+
+          TAG_VERSION="v${RAW_VERSION}"
+
+          echo "RAW_VERSION=$RAW_VERSION" >> $GITHUB_ENV
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+
+          echo "raw_version=$RAW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: setup
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - name: linux-amd64
+            runner: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - name: linux-arm64
+            runner: ubuntu-latest
+            goos: linux
+            goarch: arm64
+          - name: macos-amd64
+            runner: macos-latest
+            goos: darwin
+            goarch: amd64
+          - name: macos-arm64
+            runner: macos-latest
+            goos: darwin
+            goarch: arm64
+    env:
+      RAW_VERSION: ${{ needs.setup.outputs.raw_version }}
+      TAG_VERSION: ${{ needs.setup.outputs.tag_version }}
+      BUILD_DIR: build/bin
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js (for frontend build)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install Linux Dependencies (WebKit2GTK)
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev || sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      - name: Build Wails App
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          BUILD_TAGS=""
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
+              BUILD_TAGS="-tags webkit2_41"
+            elif pkg-config --exists webkit2gtk-4.0 2>/dev/null; then
+              BUILD_TAGS="-tags webkit2_40"
+            else
+              BUILD_TAGS="-tags webkit2_41"
+            fi
+          fi
+
+          echo "Building with tags: $BUILD_TAGS for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
+          wails build $BUILD_TAGS --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
+
+      - name: Rename and Prepare Binary Artifacts
+        run: |
+          mkdir -p final_artifacts
+          BUILT_BINARY=$(find build/bin -type f -maxdepth 1 | head -n 1)
+          if [ -z "$BUILT_BINARY" ]; then
+            BUILT_BINARY="build/guigui"
+          fi
+          
+          if [ -f "$BUILT_BINARY" ]; then
+            APP_NAME="guigui"
+            DEST_NAME="${APP_NAME}_${{ env.TAG_VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+            cp "$BUILT_BINARY" "final_artifacts/$DEST_NAME"
+            echo "Successfully prepared: $DEST_NAME"
+          else
+            echo "Error: Built binary not found."
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.name }}
+          path: final_artifacts/*
+          if-no-files-found: error
+
+  release:
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RAW_VERSION: ${{ needs.setup.outputs.raw_version }}
+      TAG_VERSION: ${{ needs.setup.outputs.tag_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check release note existence
+        id: check_release_note
+        run: |
+          NOTE_PATH="release_note/${{ env.RAW_VERSION }}.md"
+          if [ ! -f "$NOTE_PATH" ] && [ -f "releasenote/${{ env.RAW_VERSION }}.md" ]; then
+            NOTE_PATH="releasenote/${{ env.RAW_VERSION }}.md"
+          fi
+
+          if [ -f "$NOTE_PATH" ]; then
+            echo "NOTE_PATH=$NOTE_PATH" >> $GITHUB_ENV
+            echo "exists=true" >> $GITHUB_ENV
+            echo "==> Found release note: $NOTE_PATH"
+          else
+            echo "exists=false" >> $GITHUB_ENV
+            echo "==> Warning: Release note file ($NOTE_PATH) not found."
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-binaries
+
+      - name: Flatten artifacts directory
+        run: |
+          mkdir -p release_files
+          find downloaded-binaries -type f -exec mv {} release_files/ \;
+          ls -la release_files/
+
+      - name: Create GitHub Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_files/*
+          tag_name: ${{ env.TAG_VERSION }}
+          name: Release ${{ env.TAG_VERSION }}
+          body_path: ${{ env.NOTE_PATH != '' && env.NOTE_PATH || '' }}
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
