@@ -222,7 +222,7 @@ jobs:
           files: release_files/*
           tag_name: ${{ env.TAG_VERSION }}
           name: Release ${{ env.TAG_VERSION }}
-          body_path: ${{ env.NOTE_`PATH != '' && env.NOTE_PATH || '' }}
+          body_path: ${{ env.NOTE_PATH != '' && env.NOTE_PATH || '' }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
