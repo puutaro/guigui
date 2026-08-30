@@ -238,22 +238,15 @@ jobs:
           find downloaded-binaries -type f -exec mv {} release_files/ \;
           ls -la release_files/
 
-      - name: Create GitHub Release and Upload Binaries
-        run: |
-          ARGS=("create" "${{ env.TAG_VERSION }}" "--title" "Release ${{ env.TAG_VERSION }}" --draft=false --prerelease=false)
-          
-          if [ -n "${{ env.NOTE_PATH }}" ]; then
-            ARGS+=("--notes-file" "${{ env.NOTE_PATH }}")
-          else
-            ARGS+=("--generate-notes")
-          fi
-          
-          for f in release_files/*; do
-            if [ -f "$f" ]; then
-              ARGS+=("$f")
-            fi
-          done
-          
-          gh release create "${ARGS[@]}"
+      - name: Create Release and Upload Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_files/*
+          tag_name: ${{ env.TAG_VERSION }}
+          name: Release ${{ env.TAG_VERSION }}
+          body_path: ${{ env.NOTE_PATH }}
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
