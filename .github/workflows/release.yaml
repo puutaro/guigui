@@ -126,10 +126,10 @@ jobs:
           sudo apt-get update
           
           if [ "${{ matrix.goarch }}" = "amd64" ]; then
-            sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.1-dev:amd64 || sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.0-dev:amd64
+            sudo apt-get install -y libgtk-3-dev:amd64 libwebkit2gtk-4.1-dev:amd64
           elif [ "${{ matrix.goarch }}" = "arm64" ]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-            sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 || sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.0-dev:arm64
+            sudo apt-get install -y libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
           fi
 
       - name: Build Wails App
@@ -150,19 +150,8 @@ jobs:
             fi
           fi
 
-          BUILD_TAGS=""
-          if [ "${{ matrix.goos }}" = "linux" ]; then
-            if pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
-              BUILD_TAGS="-tags webkit2_41"
-            elif pkg-config --exists webkit2gtk-4.0 2>/dev/null; then
-              BUILD_TAGS="-tags webkit2_40"
-            else
-              BUILD_TAGS="-tags webkit2_41"
-            fi
-          fi
-
-          echo "Building with tags: $BUILD_TAGS for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
-          wails build $BUILD_TAGS --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
+          echo "Building with tags: -tags webkit2_41 for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
+          wails build -tags webkit2_41 --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
 
       - name: Rename and Prepare Binary Artifacts
         run: |
