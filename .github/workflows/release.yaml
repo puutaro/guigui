@@ -155,18 +155,37 @@ jobs:
       - name: Rename and Prepare Binary Artifacts
         run: |
           mkdir -p final_artifacts
-          BUILT_BINARY=$(find build/bin -type f -maxdepth 1 | head -n 1)
-          if [ -z "$BUILT_BINARY" ]; then
-            BUILT_BINARY="build/guigui"
+          
+          BUILT_BINARY=""
+          
+          # macOS (.appバンドルまたはバイナリの探索)
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            # 1. build/bin 内の .app/Contents/MacOS/ 内にあるバイナリを探す
+            if [ -d "build/bin/guigui.app/Contents/MacOS" ]; then
+              BUILT_BINARY=$(find build/bin/guigui.app/Contents/MacOS -type f | head -n 1)
+            fi
+            # 2. 見つからない場合は build/bin 以下から通常のファイルを探索
+            if [ -z "$BUILT_BINARY" ]; then
+              BUILT_BINARY=$(find build/bin -type f -maxdepth 2 | head -n 1)
+            fi
+          else
+            # Linuxなど
+            BUILT_BINARY=$(find build/bin -type f -maxdepth 2 | head -n 1)
+            if [ -z "$BUILT_BINARY" ] && [ -f "build/guigui" ]; then
+              BUILT_BINARY="build/guigui"
+            fi
           fi
           
-          if [ -f "$BUILT_BINARY" ]; then
+          echo "Target binary resolved as: $BUILT_BINARY"
+          
+          if [ -n "$BUILT_BINARY" ] && [ -f "$BUILT_BINARY" ]; then
             APP_NAME="guigui"
             DEST_NAME="${APP_NAME}_${{ env.TAG_VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}"
             cp "$BUILT_BINARY" "final_artifacts/$DEST_NAME"
             echo "Successfully prepared: $DEST_NAME"
           else
-            echo "Error: Built binary not found."
+            echo "Error: Built binary not found. Dumping build directory structure:"
+            find build -maxdepth 3 || true
             exit 1
           fi
 
