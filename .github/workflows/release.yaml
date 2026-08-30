@@ -202,10 +202,10 @@ EOF
 
           if [ -f "$NOTE_PATH" ]; then
             echo "NOTE_PATH=$NOTE_PATH" >> $GITHUB_ENV
-            echo "exists=true" >> $GITHUB_ENV
+            echo "note_exists=true" >> $GITHUB_ENV
             echo "==> Found release note: $NOTE_PATH"
           else
-            echo "exists=false" >> $GITHUB_ENV
+            echo "note_exists=false" >> $GITHUB_ENV
             echo "==> Warning: Release note file ($NOTE_PATH) not found."
           fi
 
@@ -226,7 +226,7 @@ EOF
           files: release_files/*
           tag_name: ${{ env.TAG_VERSION }}
           name: Release ${{ env.TAG_VERSION }}
-          body_path: ${{ env.NOTE_PATH != '' && env.NOTE_PATH || '' }}
+          body_path: ${{ env.NOTE_PATH }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false
