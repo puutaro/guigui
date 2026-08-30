@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-REPO_URL="https://github.com/your-username/your-repo.git"
-BINARY_NAME="your-app-name"
+REPO_URL="https://github.com/puutaro/guigui"
+BINARY_NAME="guigui"
 INSTALL_DIR="/usr/local/bin"
 
 # 必須コマンドのチェック (git, go, wails)
