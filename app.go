@@ -205,6 +205,7 @@ func (a *App) startup(ctx context.Context) {
 	case x != nil && y != nil:
 		runtime.WindowSetPosition(a.ctx, *x, *y)
 	}
+	go network.CreateProcExistFile(a.getId())
 	go a.startGuiServer(
 		ctx,
 	)
@@ -276,6 +277,7 @@ func (a *App) cleanupAndSendQuitSignal() {
 	id := a.getId()
 	removeFile(network.GetReqJsonFilePath(id))
 	removeFile(network.GetReqJsonFilePath(id))
+	removeFile(network.GetAppExistFilePath(id))
 }
 
 // 【ルートBの監視：main関数やStartupなどでバックグラウンド起動しておく】

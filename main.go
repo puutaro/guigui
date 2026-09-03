@@ -5,6 +5,8 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
@@ -28,6 +30,11 @@ const (
 var assets embed.FS
 
 func main() {
+	if runtime.GOOS == "darwin" {
+		// アプリのBundle ID（または暫定の識別子）に対してApp Napを無効化
+		exec.Command("defaults", "write", "com.puutaro.guigui", "NSAppSleepDisabled", "-bool", "YES").Run()
+	}
+
 	isWailsTool := false
 	for _, arg := range os.Args {
 		// wailsbindings や wails の文字が含まれているかチェック
@@ -110,6 +117,11 @@ func startsGui(appConfig *args.AppConfig) error {
 			Icon: windowIconBytes,
 		},
 		Mac: &mac.Options{
+			TitleBar:             mac.TitleBarDefault(),
+			Appearance:           mac.NSAppearanceNameAqua,
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
+			// macOSに「通常の最前面アプリ」として認識させ、起動時に後ろに回るのを防ぐ
 			About: &mac.AboutInfo{
 				Title: windowConfig.Title,
 				Icon:  windowIconBytes,
@@ -120,7 +132,8 @@ func startsGui(appConfig *args.AppConfig) error {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		Frameless:        true,
+		// ★ 遅延と背面隠れの主因となる Frameless（枠なし）を false（標準ウィンドウ）に修正
+		Frameless:        false,
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.sendAllQuitSignal,

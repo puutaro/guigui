@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 
+	// goruntime "runtime"
+
 	"github.com/fstanis/screenresolution"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
@@ -77,6 +79,7 @@ func (a *App) loadAndSendJson(
 	winReq := sendSrcReq.WindowRequest
 	if !winReq.IsHidden {
 		runtime.WindowUnminimise(a.ctx)
+		runtime.WindowShow(a.ctx)
 	}
 	winWidth := winReq.Width
 	winHeight := winReq.Height
@@ -128,5 +131,21 @@ func minimizeGUi(
 		},
 	})
 	// time.Sleep(50 * time.Millisecond)
-	runtime.WindowMinimise(ctx)
+	customMinimise(ctx)
+	// runtime.WindowMinimise(ctx)
 }
+
+// func customMinimise2(ctx context.Context) {
+// 	if goruntime.GOOS == "darwin" {
+// 		// 自分自身の名前を特定しようとせず、シンプルに「今一番手前にあるアプリ（＝自分）を非表示にする」命令を送ります。
+// 		// これにより、macOSの標準機能（Command+Hと同様）で、直前に触っていたアプリへ確実にフォーカスが戻ります。
+// 		cmd := exec.Command("osascript", "-e", "tell application \"System Events\" to set visible of first application process whose frontmost is true to false")
+// 		_ = cmd.Run()
+
+// 		// OS側のフォーカス移動を反映させるためのウェイト
+// 		time.Sleep(50 * time.Millisecond)
+// 	}
+
+// 	// Wailsのウィンドウを最小化します
+// 	runtime.WindowMinimise(ctx)
+// }

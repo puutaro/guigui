@@ -1,11 +1,12 @@
-import { RunCmdAndExitForList, RunCmdForList, RunReloadCmdForList } from "../../wailsjs/go/main/App";
+import { WriteStderr, RunCmdForList, RunReloadCmdForList } from "../../wailsjs/go/main/App";
 import { list } from "../../wailsjs/go/models";
 import ExecuteConfig = list.ExecuteConfig;
 import { RunCmdAndExitForListByMinimise } from "../exit/exit";
 import { outputLineByHidden } from "./libs/outputLineByHidden";
 
 export type OnKeyDownParams = {
-    e: React.KeyboardEvent<HTMLInputElement>;
+    e: React.KeyboardEvent<HTMLInputElement> | KeyboardEvent;
+    // e: React.KeyboardEvent<HTMLInputElement>;
     setListItems: React.Dispatch<React.SetStateAction<string[]>>;
     selectedIndex: number;
     filteredListItems: string[];
@@ -48,6 +49,7 @@ export const onKeyDown = (params: OnKeyDownParams) => {
     };
 
     if (isAltActive && !isModifierKey) {
+        e.preventDefault();
         const pressedKey = (e.code.startsWith('Key') && e.code.length === 4)
             ? e.code.charAt(3).toLowerCase()
             : e.key.toLowerCase();
@@ -88,7 +90,10 @@ export const onKeyDown = (params: OnKeyDownParams) => {
 
     switch (true) {
         case (e.key === 'Enter'): {
-            if (e.nativeEvent.isComposing) return;
+            const isComposing = 'nativeEvent' in e 
+                ? (e as React.KeyboardEvent).nativeEvent.isComposing 
+                : (e as KeyboardEvent).isComposing;
+            if (isComposing) return;
             e.preventDefault();
 
             const selectedItem = getSelectedItem();

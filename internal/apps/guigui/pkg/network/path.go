@@ -22,3 +22,10 @@ func getResJsonDirPath() string {
 func GetResJsonFilePath(id string) string {
 	return filepath.Join(getResJsonDirPath(), fmt.Sprintf("res_%s.json", id))
 }
+
+func getAppExistDirPath() string {
+	return filepath.Join(GetAppDir(), "appExist")
+}
+func GetAppExistFilePath(id string) string {
+	return filepath.Join(getAppExistDirPath(), fmt.Sprintf("exist_%s.json", id))
+}

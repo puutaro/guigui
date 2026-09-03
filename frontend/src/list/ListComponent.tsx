@@ -104,7 +104,14 @@ export const  ListComponent =
                     type="text"
                     placeholder="Type to search..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                        const newValue = e.target.value;
+                        if (/[≈ç√∫˜µ≤≥/åß∂ƒ©˙∆˚¬æ«œ∑®†øπ]/.test(newValue)) {
+                            return;
+                        }
+                        setSearchQuery(newValue)
+
+                    }}
                     className="border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
                         onKeyDown({
