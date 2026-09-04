@@ -61,7 +61,6 @@ export const CustomSelectField = ({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         // 閉じていてEnter/Space/上下キーを押したら開く
-        WriteStderr(`isOpen ${isOpen}`)
         if (!isOpen) {
             if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
                 e.preventDefault();

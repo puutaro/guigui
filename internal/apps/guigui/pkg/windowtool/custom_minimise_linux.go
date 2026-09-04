@@ -1,6 +1,6 @@
 //go:build !darwin
 
-package main
+package windowtool
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func customMinimise(ctx context.Context) {
+func CustomMinimise(ctx context.Context) {
 	// Windows/Linuxでは通常の最小化のみを実行
 	runtime.WindowMinimise(ctx)
 }

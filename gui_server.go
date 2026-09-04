@@ -12,6 +12,7 @@ import (
 	"github.com/fstanis/screenresolution"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowtool"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -75,14 +76,16 @@ func (a *App) loadAndSendJson(
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 	if sendSrcReq.ViewMode == "window" {
-		runtime.WindowUnminimise(a.ctx)
-		runtime.WindowShow(a.ctx)
+		windowtool.CustomShow(a.ctx)
+		// runtime.WindowUnminimise(a.ctx)
+		// runtime.WindowShow(a.ctx)
 		return nil
 	}
 	winReq := sendSrcReq.WindowRequest
 	if !winReq.IsHidden {
-		runtime.WindowUnminimise(a.ctx)
-		runtime.WindowShow(a.ctx)
+		windowtool.CustomShow(a.ctx)
+		// runtime.WindowUnminimise(a.ctx)
+		// runtime.WindowShow(a.ctx)
 	}
 	winWidth := winReq.Width
 	winHeight := winReq.Height
@@ -134,7 +137,7 @@ func minimizeGUi(
 		},
 	})
 	// time.Sleep(50 * time.Millisecond)
-	customMinimise(ctx)
+	windowtool.CustomMinimise(ctx)
 	// runtime.WindowMinimise(ctx)
 }
 

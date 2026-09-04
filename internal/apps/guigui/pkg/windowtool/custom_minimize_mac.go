@@ -1,6 +1,6 @@
 //go:build darwin
 
-package main
+package windowtool
 
 /*
 // 🚀 コンパイラにObjective-Cコードであることを明示します
@@ -23,11 +23,9 @@ import "C"
 import (
 	"context"
 	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func customMinimise(ctx context.Context) {
+func CustomMinimise(ctx context.Context) {
 	// ネイティブAPIで非表示化
 	C.hideFrontmostApplication()
 
@@ -35,6 +33,5 @@ func customMinimise(ctx context.Context) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Wailsのウィンドウを最小化
-	runtime.WindowHide(ctx)
-	// runtime.WindowMinimise(ctx)
+	// runtime.WindowHide(ctx)
 }
