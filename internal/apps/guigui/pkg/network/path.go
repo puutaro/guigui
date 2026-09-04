@@ -29,3 +29,9 @@ func getAppExistDirPath() string {
 func GetAppExistFilePath(id string) string {
 	return filepath.Join(getAppExistDirPath(), fmt.Sprintf("exist_%s.json", id))
 }
+func getAppShowDirPath() string {
+	return filepath.Join(GetAppDir(), "show")
+}
+func GetAppShowFilePath(id string) string {
+	return filepath.Join(getAppShowDirPath(), fmt.Sprintf("show_%s.json", id))
+}

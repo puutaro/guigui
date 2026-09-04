@@ -1,8 +1,12 @@
 package proc
 
 import (
+	"bytes"
 	"log"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 )
@@ -15,83 +19,59 @@ func GetPidByGuiProcessRunning(machineId string) int {
 	if err != nil {
 		return NoProcessSignal
 	}
+	// 検索するキーワードのリスト（guigui, --gui-mode, machineId）
+	keywords := []string{machineId, "guigui", "--gui-mode"}
+	// 最初のキーワード("guigui")で候補を絞り込み
+	cmd := exec.Command("pgrep", "-f", keywords[0])
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return NoProcessSignal
+	}
+	output := strings.TrimSpace(out.String())
+	if output == "" {
+		return NoProcessSignal
+	}
+	// 候補のPIDを順に走査し、すべてのキーワードが含まれているか検証
+	for _, line := range strings.Split(output, "\n") {
+		pidStr := strings.TrimSpace(line)
+		if pidStr == "" {
+			continue
+		}
+		pid, err := strconv.Atoi(pidStr)
+		if err != nil {
+			continue
+		}
+		cmdLine, err := getProcessCommandLine(pid)
+		if err != nil {
+			continue
+		}
+		matchAll := true
+		for _, kw := range keywords {
+			if !strings.Contains(cmdLine, kw) {
+				matchAll = false
+				break
+			}
+		}
 
-	// var pid int
+		if matchAll {
+			return pid
+		}
+	}
 
-	// // 該当PIDのプロセスが実際に生きているか確認（Unix系なら kill(pid, 0)）
-	// process, err := os.FindProcess(pid)
-	// if err != nil {
-	// 	return NoProcessSignal
-	// }
-
-	// // シグナル0を送ることで、プロセスが存在するかをミリ秒単位で確認
-	// err = process.Signal(syscall.Signal(0))
-	// if err != nil {
-	// 	return NoProcessSignal // プロセスが死んでいる
-	// }
-
-	return 1
+	return NoProcessSignal
 }
 
-// func GetPidByGuiProcessRunning(machineId string) int {
-// 	currentPid := int32(os.Getpid())
-// 	// 1. OS上で動いているすべてのプロセスを取得
-// 	processes, err := process.Processes()
-// 	if err != nil {
-// 		// プロセス一覧が取得できない場合は、安全側に倒して「起動していない」とみなす
-// 		return NoProcessSignal
-// 	}
-// 	for _, p := range processes {
-// 		// 自分自身のPIDはスキップ
-// 		if p.Pid == currentPid {
-// 			continue
-// 		}
-// 		// 2. プロセスの名前（実行ファイル名）を取得
-// 		name, err := p.Name()
-// 		if err != nil {
-// 			continue // 権限のないシステムプロセスなどはスキップ
-// 		}
-// 		// Windowsの場合、名前が `guigui.exe` になるため、拡張子を除外して比較
-// 		nameWithoutExe := strings.TrimSuffix(strings.ToLower(name), ".exe")
-// 		if nameWithoutExe != "guigui" {
-// 			continue // `guigui` 以外のプロセスはスキップ
-// 		}
-// 		// 3. プロセスのコマンドライン引数（[]string）を取得
-// 		cmdArgs, err := p.CmdlineSlice()
-// 		if err != nil {
-// 			continue
-// 		}
-// 		// フラグのチェック用フラグ
-// 		hasGuiMode := false
-// 		hasTargetMachineId := false
-// 		// 4. 引数の中に「--gui-mode」と指定された「machineId」が含まれているかチェック
-// 		for i := 0; i < len(cmdArgs); i++ {
-// 			arg := cmdArgs[i]
-// 			if arg == "--gui-mode" {
-// 				hasGuiMode = true
-// 			}
-// 			// --id=<machineId> の形、または --id <machineId> の形に対応
-// 			switch {
-// 			case arg == "--id" && i+1 < len(cmdArgs):
-// 				if cmdArgs[i+1] != machineId {
-// 					break
-// 				}
-// 				hasTargetMachineId = true
-// 			case strings.HasPrefix(arg, "--id="):
-// 				idVal := strings.TrimPrefix(arg, "--id=")
-// 				if idVal != machineId {
-// 					break
-// 				}
-// 				hasTargetMachineId = true
-// 			}
-// 		}
-// 		// 「guigui」という名前で、かつ `--gui-mode` があり、指定した `machineId` を持つ別プロセスを発見！
-// 		if hasGuiMode && hasTargetMachineId {
-// 			return int(p.Pid)
-// 		}
-// 	}
-// 	return NoProcessSignal
-// }
+// getProcessCommandLine は macOS / Linux 共通でPIDから実行コマンドラインを取得する
+func getProcessCommandLine(pid int) (string, error) {
+	cmd := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "command=")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	return out.String(), nil
+}
 
 func Kill(pid int) {
 	if pid == NoProcessSignal {

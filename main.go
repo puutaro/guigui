@@ -12,6 +12,7 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/guiproc"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/proc"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -45,6 +46,7 @@ func main() {
 	}
 	appConfig := &args.AppConfig{}
 	isGuiMode := false
+	isWindwoCmd := false
 	var parseErr error
 	switch {
 	case isWailsTool:
@@ -56,6 +58,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s\n", parseErr)
 			os.Exit(exitErrGeneral)
 		}
+		isWindwoCmd = appConfig.WindowCmd != nil
 		isGuiMode = getIsGuiModeFromCmd(
 			appConfig.FormCmd,
 			appConfig.ListCmd,
@@ -68,11 +71,20 @@ func main() {
 	uniqueId := getIdFromCmd(
 		appConfig.FormCmd,
 		appConfig.ListCmd,
+		appConfig.WindowCmd,
 	)
 	isGuiProcess :=
 		proc.GetPidByGuiProcessRunning(uniqueId) !=
 			proc.NoProcessSignal
-	if isGuiMode && !isGuiProcess {
+	if !isGuiProcess {
+		_ = os.Remove(
+			network.GetAppExistFilePath(uniqueId),
+		)
+	}
+	if isGuiMode &&
+		!isGuiProcess &&
+		!isWindwoCmd {
+
 		err := startsGui(appConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
@@ -80,7 +92,7 @@ func main() {
 		}
 		return
 	}
-	if !isGuiProcess {
+	if !isGuiProcess && !isWindwoCmd {
 		err := guiproc.ExecGuiCmd(os.Args[1:], appConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
@@ -89,6 +101,9 @@ func main() {
 	}
 	if isGuiProcess {
 		sendReqToGui(appConfig)
+	}
+	if isWindwoCmd {
+		return
 	}
 	serveGuiRes(
 		uniqueId,

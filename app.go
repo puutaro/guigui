@@ -17,6 +17,7 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowcmd"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -35,8 +36,9 @@ type App struct {
 	windowPositionConfig windowPositionConfig
 	windowSizeConfig     windowSizeConfig
 
-	formCmd *form.FormCmd
-	listCmd *list.ListCmd
+	formCmd   *form.FormCmd
+	listCmd   *list.ListCmd
+	windowCmd *windowcmd.WindowCmd
 }
 
 func NewApp(appConfig *args.AppConfig) *App {
@@ -216,18 +218,22 @@ func (a *App) getId() string {
 	return getIdFromCmd(
 		a.formCmd,
 		a.listCmd,
+		a.windowCmd,
 	)
 }
 
 func getIdFromCmd(
 	formCmd *form.FormCmd,
 	listCmd *list.ListCmd,
+	windowCmd *windowcmd.WindowCmd,
 ) string {
 	switch {
 	case formCmd != nil:
 		return formCmd.Id
 	case listCmd != nil:
 		return listCmd.Id
+	case windowCmd != nil:
+		return windowCmd.Id
 	}
 	return ""
 }

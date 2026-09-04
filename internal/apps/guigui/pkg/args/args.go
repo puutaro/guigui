@@ -13,18 +13,21 @@ import (
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowcmd"
 )
 
 type CLI struct {
-	Form *form.FormCmd `arg:"subcommand:form" help:"Launch a form dialog"`
-	List *list.ListCmd `arg:"subcommand:list" help:"Launch a list dialog"`
+	Form   *form.FormCmd        `arg:"subcommand:form" help:"Launch a form dialog"`
+	List   *list.ListCmd        `arg:"subcommand:list" help:"Launch a list dialog"`
+	Window *windowcmd.WindowCmd `arg:"subcommand:window" help:"manipulate dialog window"`
 }
 type AppConfig struct {
 	CmdName      string
 	WindowConfig window.WindowOptions
 
-	FormCmd *form.FormCmd
-	ListCmd *list.ListCmd
+	WindowCmd *windowcmd.WindowCmd
+	FormCmd   *form.FormCmd
+	ListCmd   *list.ListCmd
 }
 
 func (CLI) Version() string {
@@ -51,9 +54,12 @@ func Parse() (*AppConfig, error) {
 	}
 	cmdName := "form"
 	var windowConfig window.WindowOptions
+	windowCmd := args.Window
 	formCmd := args.Form
 	listCmd := args.List
 	switch {
+	case windowCmd != nil:
+		cmdName = "window"
 	case listCmd != nil:
 		stat, err := os.Stdin.Stat()
 		if err != nil || (stat.Mode()&os.ModeCharDevice) != 0 {
@@ -86,6 +92,7 @@ func Parse() (*AppConfig, error) {
 		WindowConfig: windowConfig,
 		FormCmd:      args.Form,
 		ListCmd:      args.List,
+		WindowCmd:    args.Window,
 	}, nil
 }
 

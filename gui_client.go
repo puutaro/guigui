@@ -50,6 +50,8 @@ func sendReqToGui(
 			Y:        listCmd.Y,
 			IsHidden: listCmd.WindowOptions.Hidden,
 		}
+	case appConfig.WindowCmd != nil:
+		id = appConfig.WindowCmd.Id
 	}
 	sendReq := network.GuiRequest{
 		Id:            id,

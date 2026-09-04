@@ -18,13 +18,11 @@ import (
 func (app *App) startGuiServer(
 	ctx context.Context,
 ) {
-	id := ""
-	switch {
-	case app.formCmd != nil:
-		id = app.formCmd.Id
-	case app.listCmd != nil:
-		id = app.listCmd.Id
-	}
+	id := getIdFromCmd(
+		app.formCmd,
+		app.listCmd,
+		app.windowCmd,
+	)
 	srvCh := make(chan string, 1)
 	go network.StartServer(
 		ctx,
@@ -75,6 +73,11 @@ func (a *App) loadAndSendJson(
 	var sendSrcReq network.GuiRequest
 	if err := json.Unmarshal(fileBytes, &sendSrcReq); err != nil {
 		return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+	if sendSrcReq.ViewMode == "window" {
+		runtime.WindowUnminimise(a.ctx)
+		runtime.WindowShow(a.ctx)
+		return nil
 	}
 	winReq := sendSrcReq.WindowRequest
 	if !winReq.IsHidden {
