@@ -97,17 +97,25 @@ export const CustomSelectField = ({
             }
         }
     };
+    const handleBlur = (e: React.FocusEvent) => {
+        // 次にフォーカスが当たる要素が containerRef（自分自身やその子要素）の中に含まれていない場合のみ閉じる
+        if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+            setIsOpen(false);
+        }
+    };
 
     return (
         <div ref={containerRef} className="relative w-full">
             {/* キー操作を受け取るための button */}
             <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                    e.currentTarget.focus();
                     setIsOpen(!isOpen)
                     }
                 }
                 onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
                 className="w-full border rounded text-left flex justify-between items-center bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 style={{ padding: `${borderValue}px` }}
             >
