@@ -39,8 +39,11 @@ ensure_go() {
         echo "==> Go is not installed. Installing Go..."
         GO_VERSION="1.22.5"
         ARCH="$(uname -m)"
-        [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-        [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] && ARCH="arm64"
+        if [ "$ARCH" = "x86_64" ]; then
+            ARCH="amd64"
+        elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            ARCH="arm64"
+        fi
         OS_LOWER="$(echo "$(uname -s)" | tr '[:upper:]' '[:lower:]')"
         
         GO_TARBALL="go${GO_VERSION}.${OS_LOWER}-${ARCH}.tar.gz"
@@ -49,12 +52,47 @@ ensure_go() {
         sudo tar -C /usr/local -xzf "${GO_TARBALL}"
         rm -f "${GO_TARBALL}"
     fi
-    # パスを通す
-    export PATH=$PATH:/usr/local/go/bin
-    export PATH=$PATH:$(go env GOPATH)/bin
+    # パスを確実に通す
+    export PATH="/usr/local/go/bin:$PATH"
+    export PATH="$HOME/go/bin:$PATH"
+    if command -v go >/dev/null 2>&1; then
+        export PATH="$PATH:$(go env GOPATH)/bin"
+    fi
 }
 
-# 3. Wails CLIの確認・自動インストール
+# 3. Node.js (npm) の確認・自動インストール 【新規追加】
+ensure_node() {
+    if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+        echo "==> Node.js/npm is not installed. Installing Node.js..."
+        if [ "$(uname -s)" = "Darwin" ]; then
+            brew install node
+        else
+            if [ -f /etc/os-release ]; then
+                . /etc/os-release
+                case "$ID" in
+                    ubuntu|debian|linuxmint|pop)
+                        # NodeSourceからLTS(v20)を導入する例
+                        curl -fsSL https://nodesource.com | sudo -E bash -
+                        sudo apt-get install -y nodejs
+                        ;;
+                    fedora|rhel|centos|rocky|almalinux)
+                        curl -fsSL https://nodesource.com | sudo -E bash -
+                        sudo dnf install -y nodejs
+                        ;;
+                    arch|manjaro)
+                        sudo pacman -S --needed --noconfirm nodejs npm
+                        ;;
+                    *)
+                        # フォールバックとしてパッケージマネージャから直接試行
+                        sudo apt-get install -y nodejs npm || sudo dnf install -y nodejs
+                        ;;
+                esac
+            fi
+        fi
+    fi
+}
+
+# 4. Wails CLIの確認・自動インストール
 ensure_wails() {
     if ! command -v wails >/dev/null 2>&1; then
         echo "==> Wails CLI is not installed. Installing Wails..."
@@ -62,7 +100,7 @@ ensure_wails() {
     fi
 }
 
-# 4. LinuxのWebKit依存関係の自動インストール
+# 5. LinuxのWebKit依存関係の自動インストール
 install_linux_dependencies() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -97,6 +135,7 @@ install_linux_dependencies() {
 # 実行フロー
 ensure_git
 ensure_go
+ensure_node    # 追加
 ensure_wails
 
 # 一時ディレクトリにリポジトリをクローン
@@ -129,7 +168,7 @@ case "$OS" in
         ;;
     Darwin)
         echo "==> Building for macOS..."
-        wails build --clean -ldflags "-s -w"
+        wails build --clean -ldflags "-s -w" -v 2
         ;;
     *)
         echo "Error: Unsupported OS ($OS)"
@@ -138,9 +177,10 @@ case "$OS" in
 esac
 
 # バイナリのインストール
-BUILT_BINARY="build/bin/$BINARY_NAME"
-if [ ! -f "$BUILT_BINARY" ]; then
-    BUILT_BINARY=$(find build/bin -type f -maxdepth 1 | head -n 1)
+if [ "$OS" = "Darwin" ]; then
+    BUILT_BINARY="build/bin/${BINARY_NAME}.app/Contents/MacOS/$BINARY_NAME"
+else
+    BUILT_BINARY="build/bin/$BINARY_NAME"
 fi
 
 if [ -f "$BUILT_BINARY" ]; then
