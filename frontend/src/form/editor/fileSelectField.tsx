@@ -1,5 +1,6 @@
 import { form } from '../../../wailsjs/go/models';
 import { SelectFile } from '../../../wailsjs/go/main/App';
+import { is_special_str } from '../../libs/is_specaial_str';
 
 export type FileSelectFieldProps = {
   field: form.FieldDef,
@@ -22,7 +23,12 @@ export const FileSelectField = ({
         <input 
           type="text" 
           value={formValues[fieldKey] ?? field.defaultValue ?? ""} 
-          onChange={(e) => setFieldValue(fieldKey, e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (is_special_str(newValue)) {
+                return;
+            }
+            setFieldValue(fieldKey, newValue)}}
           className="border rounded flex-1"
           style={{ padding: `${borderValue}px` }}
         />

@@ -1,4 +1,5 @@
 import { form } from '../../../wailsjs/go/models';
+import { is_special_str } from '../../libs/is_specaial_str';
 
 export type NumSelectFieldProps = {
   field: form.FieldDef,
@@ -42,7 +43,13 @@ export const NumEditField = ({
         min={minVal}
         max={maxVal}
         value={currentValue}
-        onChange={(e) => setFieldValue(fieldKey, e.target.value)}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          if (is_special_str(newValue)) {
+              return;
+          }
+          setFieldValue(fieldKey, e.target.value)
+        }}
         className="border rounded-l rounded-r-none flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-right"
         style={{ padding: `${borderValue}px` }}
       />

@@ -5,6 +5,7 @@ import {onKeyDown} from "./onKeyDown";
 import {FilterDisplay} from "./FilterDisplay";
 import {makeDisplayText} from "./libs/makeDisplayText";
 import {HeaderDisplay} from "./HeaderDisplay";
+import { is_special_str } from '../libs/is_specaial_str';
 
 export type ListComponentProps = {
     listConfig: list.ListConfigResponse | null;
@@ -110,7 +111,7 @@ export const  ListComponent =
                     value={searchQuery}
                     onChange={(e) => {
                         const newValue = e.target.value;
-                        if (/[≈ç√∫˜µ≤≥/åß∂ƒ©˙∆˚¬æ«œ∑®†øπ]/.test(newValue)) {
+                        if (is_special_str(newValue)) {
                             return;
                         }
                         setSearchQuery(newValue)

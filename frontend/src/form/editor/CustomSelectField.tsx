@@ -1,6 +1,7 @@
 // editor/CustomSelectField.tsx
 import { useState, useRef, useEffect } from 'react';
 import { form } from '../../../wailsjs/go/models';
+import { WriteStderr } from '../../../wailsjs/go/main/App';
 
 export type CustomSelectFieldProps = {
     field: form.FieldDef;
@@ -60,6 +61,7 @@ export const CustomSelectField = ({
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         // 閉じていてEnter/Space/上下キーを押したら開く
+        WriteStderr(`isOpen ${isOpen}`)
         if (!isOpen) {
             if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
                 e.preventDefault();
@@ -67,7 +69,6 @@ export const CustomSelectField = ({
             }
             return;
         }
-
         switch (e.key) {
             case 'ArrowDown': {
                 e.preventDefault();
@@ -102,7 +103,10 @@ export const CustomSelectField = ({
             {/* キー操作を受け取るための button */}
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    setIsOpen(!isOpen)
+                    }
+                }
                 onKeyDown={handleKeyDown}
                 className="w-full border rounded text-left flex justify-between items-center bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 style={{ padding: `${borderValue}px` }}

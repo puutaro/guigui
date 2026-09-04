@@ -4,6 +4,7 @@ import { SuggestHistoryItem } from "../FormComponent";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { filterListItemObjs } from "../../libs/filer";
 import { renderForFilterText } from "../../libs/renderForFilterText";
+import { is_special_str } from "../../libs/is_specaial_str";
 
 export type CustomSuggestInputProps = {
     fieldKey: string;
@@ -140,8 +141,12 @@ export const CustomSuggestInput = ({
                 }}
                 onSelect={handleSelect}
                 onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (is_special_str(newValue)) {
+                        return;
+                    }
                     setIsAllSelected(false);
-                    setFieldValue(fieldKey, e.target.value);
+                    setFieldValue(fieldKey, newValue);
                     setSelectedSugIndex(-1); // 文字を入力した時だけ選択を解除
                     updateDropPosition();
                     setIsOpen(true);

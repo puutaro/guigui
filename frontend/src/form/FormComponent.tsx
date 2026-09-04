@@ -13,6 +13,7 @@ import {makeKey} from "./editor/makeKey";
 import {CustomSuggestInput} from "./editor/CustomSuggestInput"
 import {WriteStderr, WriteStdout} from "../../wailsjs/go/main/App";
 import {CustomSelectField} from "./editor/CustomSelectField";
+import { is_special_str } from '../libs/is_specaial_str';
 
 // サジェスト用の履歴データ型
 export type SuggestHistoryItem = {
@@ -242,7 +243,13 @@ export const FormComponent = ({
                                         <input
                                           type="text"
                                           value={formValues[key] ?? field.defaultValue ?? ""}
-                                          onChange={(e) => setFieldValue(key, e.target.value)}
+                                          onChange={(e) => {
+                                            const newValue = e.target.value;
+                                            if (is_special_str(newValue)) {
+                                                return;
+                                            }
+                                            setFieldValue(key, newValue)
+                                        }}
                                           className="border rounded"
                                           style={{ padding: `${borderValue}px` }}
                                         />
