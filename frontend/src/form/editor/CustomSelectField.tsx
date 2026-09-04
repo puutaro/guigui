@@ -90,6 +90,7 @@ export const CustomSelectField = ({
             }
             case 'Escape': {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsOpen(false);
                 break;
             }

@@ -102,6 +102,10 @@ export const  ListComponent =
                 <input
                     ref={searchInputRef}
                     type="text"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    autoComplete="off"
                     placeholder="Type to search..."
                     value={searchQuery}
                     onChange={(e) => {
