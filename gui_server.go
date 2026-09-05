@@ -87,6 +87,7 @@ func (a *App) loadAndSendJson(
 		// runtime.WindowUnminimise(a.ctx)
 		// runtime.WindowShow(a.ctx)
 	}
+
 	winWidth := winReq.Width
 	winHeight := winReq.Height
 	switch {
@@ -111,6 +112,12 @@ func (a *App) loadAndSendJson(
 		winWidth,
 		winHeight,
 	)
+	switch {
+	case sendSrcReq.Form.Title != "":
+		runtime.WindowSetTitle(ctx, sendSrcReq.Form.Title)
+	case sendSrcReq.List.Title != "":
+		runtime.WindowSetTitle(ctx, sendSrcReq.List.Title)
+	}
 	// 3. Wailsのイベント機能を使ってGUIにプッシュ送信する
 	// 第一引数: コンテキスト
 	// 第二引数: フロントエンド側で待ち受けるイベント名（任意）
@@ -128,11 +135,14 @@ func minimizeGUi(
 	ctx context.Context,
 	id string,
 ) {
+
+	title := "Guigui sleeping..."
+	runtime.WindowSetTitle(ctx, title)
 	runtime.EventsEmit(ctx, "req", network.GuiRequestForWebview{
 		Id:       id,
 		ViewMode: "list",
 		List: list.ListConfigResponse{
-			Title: "Guigui sleeping...",
+			Title: title,
 			Text:  "Sleeping...",
 		},
 	})

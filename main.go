@@ -131,7 +131,7 @@ func startsGui(appConfig *args.AppConfig) error {
 			Icon: windowIconBytes,
 		},
 		Mac: &mac.Options{
-			TitleBar:             mac.TitleBarDefault(),
+			TitleBar:             mac.TitleBarHidden(),
 			Appearance:           mac.NSAppearanceNameAqua,
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
@@ -147,7 +147,7 @@ func startsGui(appConfig *args.AppConfig) error {
 			Assets: assets,
 		},
 		// ★ 遅延と背面隠れの主因となる Frameless（枠なし）を false（標準ウィンドウ）に修正
-		Frameless:        false,
+		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.sendAllQuitSignal,
