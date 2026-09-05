@@ -46,6 +46,16 @@ func Parse() (*AppConfig, error) {
 	listCmd := args.List
 	windowCmd := args.Window
 	switch {
+	case formCmd != nil &&
+		formCmd.GuiOptions.QuitGui &&
+		formCmd.Unique.Id == "":
+		return nil, fmt.Errorf("Require id, when --guit-gui is specified\n")
+	case listCmd != nil &&
+		listCmd.GuiOptions.QuitGui &&
+		listCmd.Unique.Id == "":
+		return nil, fmt.Errorf("Require id, when --guit-gui is specified\n")
+	}
+	switch {
 	case formCmd != nil && formCmd.Id == "":
 		formCmd.Id = network.GetMachineId()
 	case listCmd != nil && listCmd.Id == "":

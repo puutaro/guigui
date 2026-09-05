@@ -9,18 +9,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
 )
 
 const NoProcessSignal = -1
 
 func GetPidByGuiProcessRunning(machineId string) int {
-	appExistFilePath := network.GetAppExistFilePath(machineId)
-	if _, err := os.Stat(appExistFilePath); err != nil {
-		return NoProcessSignal
-	}
-
 	kwMachineId := machineId
 	kwGuigui := "guigui"
 	kwGuiMode := "--gui-mode"
@@ -32,10 +25,10 @@ func GetPidByGuiProcessRunning(machineId string) int {
 	}
 }
 
-// macOS用: `ps` を1回だけ実行してメモリ上で一括判定（確実＆高速）
+// macOS用: `-ww` オプションを追加してコマンドライン文字列の切り捨てを防止
 func getPidMacFast(kw1, kw2, kw3 string) int {
-	// 全プロセスの PID と COMMMAND を一括取得（実行は1回のみ）
-	cmd := exec.Command("ps", "-eo", "pid,command")
+	// -ww を付けることで、長いコマンドラインが途中でトリミングされるのを防ぐ
+	cmd := exec.Command("ps", "-ww", "-eo", "pid,command")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	if err := cmd.Run(); err != nil {
@@ -54,7 +47,6 @@ func getPidMacFast(kw1, kw2, kw3 string) int {
 			strings.Contains(line, kw2) &&
 			strings.Contains(line, kw3) {
 
-			// 先頭の PID 部分を取り出す
 			fields := strings.Fields(line)
 			if len(fields) > 0 {
 				if pid, err := strconv.Atoi(fields[0]); err == nil {
@@ -67,10 +59,8 @@ func getPidMacFast(kw1, kw2, kw3 string) int {
 	return NoProcessSignal
 }
 
-// Linux用: /proc 直読み（外部プロセス起動ゼロで最速）
+// Linux用: ヌル文字 (\x00) をスペースに置換してから判定
 func getPidLinuxFast(kw1, kw2, kw3 string) int {
-	b1, b2, b3 := []byte(kw1), []byte(kw2), []byte(kw3)
-
 	procDir, err := os.Open("/proc")
 	if err != nil {
 		return NoProcessSignal
@@ -89,13 +79,17 @@ func getPidLinuxFast(kw1, kw2, kw3 string) int {
 		}
 
 		cmdlineBytes, err := os.ReadFile(filepath.Join("/proc", entry, "cmdline"))
-		if err != nil {
+		if err != nil || len(cmdlineBytes) == 0 {
 			continue
 		}
 
-		if bytes.Contains(cmdlineBytes, b1) &&
-			bytes.Contains(cmdlineBytes, b2) &&
-			bytes.Contains(cmdlineBytes, b3) {
+		// 🌟 重要: \x00 (ヌル文字) をスペースに置換して1つの文字列にする
+		fullCmdline := string(bytes.ReplaceAll(cmdlineBytes, []byte{0}, []byte(" ")))
+
+		// 文字列として3つのキーワードが含まれるか検索
+		if strings.Contains(fullCmdline, kw1) &&
+			strings.Contains(fullCmdline, kw2) &&
+			strings.Contains(fullCmdline, kw3) {
 			return pid
 		}
 	}
@@ -112,7 +106,6 @@ func Kill(pid int) {
 		log.Printf("PID: %d not found: %v\n", pid, err)
 		return
 	}
-	// 2. プロセスを強制終了（内部で SIGKILL または WindowsのTerminateProcess を実行）
 	err = proc.Kill()
 	if err != nil {
 		log.Printf("failure to kill: PID %d, err: %v\n", pid, err)
