@@ -5,9 +5,11 @@ go 1.25.0
 require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/alexflint/go-arg v1.6.1
+	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/fstanis/screenresolution v0.0.0-20190527020317-869904d15333
 	github.com/wailsapp/wails/v2 v2.13.0
+	golang.org/x/sys v0.44.0
 )
 
 require (
@@ -39,7 +41,6 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 )
 

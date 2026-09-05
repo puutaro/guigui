@@ -5,15 +5,12 @@ import (
 	"embed"
 	"fmt"
 	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/guiproc"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/proc"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -31,11 +28,6 @@ const (
 var assets embed.FS
 
 func main() {
-	if runtime.GOOS == "darwin" {
-		// アプリのBundle ID（または暫定の識別子）に対してApp Napを無効化
-		exec.Command("defaults", "write", "com.puutaro.guigui", "NSAppSleepDisabled", "-bool", "YES").Run()
-	}
-
 	isWailsTool := false
 	for _, arg := range os.Args {
 		// wailsbindings や wails の文字が含まれているかチェック
@@ -73,18 +65,22 @@ func main() {
 		appConfig.ListCmd,
 		appConfig.WindowCmd,
 	)
-	isGuiProcess :=
-		proc.GetPidByGuiProcessRunning(uniqueId) !=
-			proc.NoProcessSignal
-	if !isGuiProcess {
-		_ = os.Remove(
-			network.GetAppExistFilePath(uniqueId),
+	isGuiProcess := false
+	var IsGuiProcessRunningErr error
+	if !isWailsTool {
+		isGuiProcess, IsGuiProcessRunningErr =
+			network.IsGuiProcessRunning(uniqueId)
+	}
+	if IsGuiProcessRunningErr != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Info:IsGuiProcessRunning: %s\n",
+			IsGuiProcessRunningErr.Error(),
 		)
 	}
 	if isGuiMode &&
 		!isGuiProcess &&
 		!isWindwoCmd {
-
 		err := startsGui(appConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
@@ -93,10 +89,13 @@ func main() {
 		return
 	}
 	if !isGuiProcess && !isWindwoCmd {
-		err := guiproc.ExecGuiCmd(os.Args[1:], appConfig)
+		pid, err := guiproc.ExecGuiCmd(os.Args[1:], appConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 			os.Exit(exitErrGeneral)
+		}
+		if err := network.CreateExistFile(uniqueId, pid); err != nil {
+			fmt.Fprintf(os.Stderr, "Info:CreateExistFile: %s\n", err)
 		}
 	}
 	if isGuiProcess {

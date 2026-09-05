@@ -164,7 +164,7 @@ func (a *App) RunCmdAndExitForList(
 	replacedCmdStr := a.replaceHolder(cmdStr, line, delimiter)
 	err := a.execRunCmd(replacedCmdStr, io.Discard)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "command failed: %v", err)
+		fmt.Fprintf(os.Stderr, "command failed: %v\n", err)
 	}
 	res := network.GuiResponse{
 		Id:       a.getId(),
@@ -207,7 +207,12 @@ func (a *App) startup(ctx context.Context) {
 	case x != nil && y != nil:
 		runtime.WindowSetPosition(a.ctx, *x, *y)
 	}
-	go network.CreateProcExistFile(a.getId())
+	go func() {
+		err := network.UpdateExistInfoByGuiEnable(a.getId())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Info: update miss: %s\n", err.Error())
+		}
+	}()
 	go a.startGuiServer(
 		ctx,
 	)
@@ -283,7 +288,7 @@ func (a *App) cleanupAndSendQuitSignal() {
 	id := a.getId()
 	removeFile(network.GetReqJsonFilePath(id))
 	removeFile(network.GetReqJsonFilePath(id))
-	removeFile(network.GetAppExistFilePath(id))
+	network.RemoveExistFile(id)
 }
 
 // 【ルートBの監視：main関数やStartupなどでバックグラウンド起動しておく】
