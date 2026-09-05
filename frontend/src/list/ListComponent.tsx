@@ -6,14 +6,18 @@ import {FilterDisplay} from "./FilterDisplay";
 import {makeDisplayText} from "./libs/makeDisplayText";
 import {HeaderDisplay} from "./HeaderDisplay";
 import { is_special_str } from '../libs/is_specaial_str';
+import { KeepConfig } from '../type/keepInfo';
+import { inputEscGuard } from '../libs/input_esc_gaurd';
 
 export type ListComponentProps = {
     listConfig: list.ListConfigResponse | null;
+    keepConfigRef: React.MutableRefObject<KeepConfig>,
     borderValue: number;
 }
 export const  ListComponent =
     ({
         listConfig,
+        keepConfigRef,
         borderValue,
    }: ListComponentProps
 ) => {
@@ -77,6 +81,11 @@ export const  ListComponent =
             });
         }, [selectedIndex, filteredBodyItemObjs]);
         listItemRefs.current = [];
+        // 最後に「確定」されていたテキストを保持する Ref
+        const lastCommittedRef = useRef(searchQuery);
+        // IME変換中かどうかを保持する Ref
+        const isComposingRef = useRef(false);
+        const justEndedComposingRef = useRef(false);
         return (
             <div
                 id="list-view"
@@ -117,6 +126,14 @@ export const  ListComponent =
                         setSearchQuery(newValue)
 
                     }}
+                    onCompositionStart={() => {
+                        isComposingRef.current = true;
+                        justEndedComposingRef.current = false;
+                    }}
+                    onCompositionEnd={() => {
+                        isComposingRef.current = false;
+                        justEndedComposingRef.current = true;
+                    }}
                     className="border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     onKeyDown={(e) => {
                         onKeyDown({
@@ -124,6 +141,7 @@ export const  ListComponent =
                             setListItems,
                             selectedIndex,
                             filteredListItems: headerAndFilteredBodyListItems,
+                            searchQuery: searchQuery,
                             setSelectedIndex,
                             setSearchQuery,
                             searchInputRef,
@@ -133,6 +151,10 @@ export const  ListComponent =
                             delimiter: listConfig?.delimiter || "",
                             headerLines,
                             isCycle: listConfig?.cycle ?? false,
+                            keepConfig: keepConfigRef.current,
+                            isComposingRef: isComposingRef,
+                            lastCommittedRef: lastCommittedRef,
+                            justEndedComposingRef: justEndedComposingRef,
                         })
                     }}
                     style={{
@@ -166,6 +188,7 @@ export const  ListComponent =
                     <p className="text-gray-500">No matching items.</p>
                 ) : (
                     <FilterDisplay
+                        keepConfigRef={keepConfigRef}
                         listItemRefs={listItemRefs}
                         filterItemOpjs={filteredBodyItemObjs}
                         setSearchQuery={setSearchQuery}

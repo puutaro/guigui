@@ -1,19 +1,23 @@
-import wailsLogo from './assets/wails.png'
 import './App.css'
 import { useEffect, useState, useRef } from 'react';
 import {useEscClose, useLoadConfig, VIEW_MODES, ViewType} from './useStartup';
 import {
     GetFormConfig,
-    GetListConfig, WriteStderr, WriteStdout,
+    GetListConfig, GetWindowInfo, WriteStderr, WriteStdout,
 } from '../wailsjs/go/main/App';
 import {form, list, network} from '../wailsjs/go/models'
 import { FormComponent } from './form/FormComponent';
 import { ListComponent } from './list/ListComponent';
 import { CustomHeader } from "./header/CustomHeader";
+import { KeepConfig } from "./type/keepInfo";
 import {EventsOn} from "../wailsjs/runtime"; // タイポ修正
 
 function App() {
-    useEscClose()
+    const keepConfigRef = useRef<KeepConfig>({
+        isKeep: false,
+        keepExcludes: [],
+    })
+    useEscClose(keepConfigRef)
     const { viewType, setViewType } = useLoadConfig();
     const [listConfig, setListConfig] = useState<list.ListConfigResponse | null>(null);
     // フォーム設定を保持するステート
@@ -58,6 +62,11 @@ function App() {
                     }
                         break
                 }
+                const windowInfo = data.windowInfo
+                keepConfigRef.current = {
+                    isKeep: windowInfo.isKeep,
+                    keepExcludes: windowInfo?.keepExcludes ?? [],
+                }
                 setViewType(data.viewMode as ViewType);
             } catch(e){
                 WriteStderr(`err ${e}`)
@@ -75,6 +84,16 @@ function App() {
     let isInitConfigLoadedRef = useRef(false)
     useEffect(() => {
         if(isInitConfigLoadedRef.current) return
+        GetWindowInfo().then(
+            (windowInfo) => {
+            keepConfigRef.current = {
+                isKeep: windowInfo.isKeep,
+                keepExcludes: windowInfo?.keepExcludes ?? [],
+            }
+            }
+        ).catch((err) => {
+            console.error("Failed to load windowInfo:", err);
+        })
         switch (true){
             case (viewType === VIEW_MODES.FORM): {
                 GetFormConfig()
@@ -146,6 +165,7 @@ function App() {
                     {viewType === VIEW_MODES.FORM && (
                         <FormComponent
                             formConfig={formConfig}
+                            keepConfigRef={keepConfigRef}
                             borderValue={borderValue}
                         />
                     )}
@@ -153,6 +173,7 @@ function App() {
                     {viewType === VIEW_MODES.LIST && (
                         <ListComponent
                             listConfig={listConfig}
+                            keepConfigRef={keepConfigRef}
                             borderValue={borderValue}
                         />
                     )}

@@ -1,4 +1,5 @@
 import { form } from '../../../wailsjs/go/models';
+import { KeepConfig } from '../../type/keepInfo';
 import {SuggestHistoryItem} from "../FormComponent";
 
 export type BottomButtonProps = {
@@ -8,6 +9,7 @@ export type BottomButtonProps = {
   formValuesRef: React.MutableRefObject<Record<string, string>>,
   isAltPressed: boolean;
   isExecutingRef: React.MutableRefObject<boolean>,
+  keepConfigRef: React.MutableRefObject<KeepConfig>,
   setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
   handleButtonClick: (
     formConfigRef: React.MutableRefObject<form.FormConfigResponse | null>,
@@ -15,6 +17,7 @@ export type BottomButtonProps = {
     formValuesRef: React.MutableRefObject<Record<string, string>>,
     isExecutingRef: React.MutableRefObject<boolean>,
     setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
+    keepConfig: KeepConfig,
   ) => Promise<void>;
 }
 
@@ -27,6 +30,7 @@ export const BottomButton = ({
   isExecutingRef,
   setHistoryMap,
   handleButtonClick,
+  keepConfigRef,
 }: BottomButtonProps) => {
   return (
     <div className="flex justify-end space-x-2 pt-4 border-t mt-2 flex-shrink-0 bg-white">
@@ -45,6 +49,7 @@ export const BottomButton = ({
                 formValuesRef,
                 isExecutingRef,
                 setHistoryMap,
+                keepConfigRef.current,
             )}
             className="border rounded bg-blue-50 hover:bg-blue-100 active:bg-blue-200 shadow-sm"
             style={{ 

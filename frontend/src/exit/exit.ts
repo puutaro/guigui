@@ -5,12 +5,16 @@ import {
     WriteStdoutByHidden,
     MinimizeGui,
 } from '../../wailsjs/go/main/App';
-import {network} from "../../wailsjs/go/models";
+import { KeepConfig } from '../type/keepInfo';
 
-export const Exit252ByMinimise = () => {
-    // (window as any).runtime.WindowMinimise();
+export const Exit252ByMinimise = (keepConfig: KeepConfig, eventName: string) => {
     (async () => {
-        await MinimizeGui()
+        if (
+            !keepConfig.isKeep 
+            || keepConfig.keepExcludes.includes(eventName)
+        ){
+            await MinimizeGui()
+        }
         await ExitWith252()
     })()
 }
@@ -21,10 +25,13 @@ export const RunCmdAndExitForListByMinimise = (
     exitCode: number,
     delimiter: string,
     stdout: string,
+    keepConfig: KeepConfig,
 ) => {
     // (window as any).runtime.WindowMinimise();
     (async () => {
-        await MinimizeGui()
+        if (!keepConfig.isKeep){
+            await MinimizeGui()
+        }
         await RunCmdAndExitForList(
             shell,
             selectedItem,
@@ -38,16 +45,23 @@ export const RunCmdAndExitForListByMinimise = (
 export const WriteStdoutAndExitByHidden = async (
   stdout: string,
   exitCode: number,
+  keepConfig: KeepConfig,
 ) => {
-    (window as any).runtime.WindowMinimise();
-    await MinimizeGui()
+    if (!keepConfig.isKeep){
+        (window as any).runtime.WindowMinimise();
+        await MinimizeGui()
+    }
     await WriteStdoutByHidden(
         stdout,
         exitCode,
     );
 }
-export const ExitByHidden = async (exitCode: number) => {
-    // (window as any).runtime.WindowMinimise();
-    await MinimizeGui()
+export const ExitByHidden = async (
+    exitCode: number,
+    keepConfig: KeepConfig,
+) => {
+    if (!keepConfig.isKeep){
+        await MinimizeGui()
+    }
     await ExitWithNumber(exitCode);
 }

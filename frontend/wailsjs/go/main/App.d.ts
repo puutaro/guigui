@@ -16,6 +16,8 @@ export function GetListConfig():Promise<list.ListConfigResponse>;
 
 export function GetSendRequest():Promise<network.GuiRequestForWebview>;
 
+export function GetWindowInfo():Promise<network.WindowRequestForWebView>;
+
 export function Greet(arg1:string):Promise<string>;
 
 export function HandleSendRequest(arg1:network.GuiRequestForWebview):Promise<void>;

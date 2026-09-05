@@ -14,6 +14,8 @@ import {CustomSuggestInput} from "./editor/CustomSuggestInput"
 import {WriteStderr, WriteStdout} from "../../wailsjs/go/main/App";
 import {CustomSelectField} from "./editor/CustomSelectField";
 import { is_special_str } from '../libs/is_specaial_str';
+import { KeepConfig } from '../type/keepInfo';
+import { inputEscGuard } from '../libs/input_esc_gaurd';
 
 // サジェスト用の履歴データ型
 export type SuggestHistoryItem = {
@@ -24,11 +26,13 @@ export type SuggestHistoryItem = {
 // 親から受け取るpropsの型定義
 export type FormComponentProps = {
     formConfig: form.FormConfigResponse | null;
+    keepConfigRef: React.MutableRefObject<KeepConfig>;
     borderValue: number;
 }
 
 export const FormComponent = ({
                                   formConfig,
+                                  keepConfigRef,
                                   borderValue,
                               }: FormComponentProps) => {
 
@@ -95,6 +99,7 @@ export const FormComponent = ({
                         formValuesRef,
                         isExecutingRef,
                         setHistoryMap,
+                        keepConfigRef.current,
                     );
                     return;
                 }
@@ -116,6 +121,7 @@ export const FormComponent = ({
                         formValuesRef,
                         isExecutingRef,
                         setHistoryMap,
+                        keepConfigRef.current,
                     );
                 }
             }
@@ -242,13 +248,23 @@ export const FormComponent = ({
                                     {field.type === 'TXT' && (
                                         <input
                                           type="text"
+                                          autoCorrect="off"
+                                          autoCapitalize="off"
+                                          spellCheck="false"
+                                          autoComplete="off"
                                           value={formValues[key] ?? field.defaultValue ?? ""}
                                           onChange={(e) => {
                                             const newValue = e.target.value;
-                                            if (is_special_str(newValue)) {
-                                                return;
+                                            // ★ 2. onChange で return せず、そのままステートを更新する
+                                            setFieldValue(key, newValue);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            // ★ 3. Mac Option(Alt)+アルファベットによる特殊文字入力を onKeyDown で物理カット
+                                            if (e.altKey && !['Alt', 'Shift', 'Control', 'Meta', 'Tab'].includes(e.key)) {
+                                                e.preventDefault();
                                             }
-                                            setFieldValue(key, newValue)
+                                            // 既存の Esc / Backspace / IME ガード関数
+                                            inputEscGuard(e);
                                         }}
                                           className="border rounded"
                                           style={{ padding: `${borderValue}px` }}
@@ -326,6 +342,7 @@ export const FormComponent = ({
                         formValuesRef={formValuesRef}
                         isAltPressed={isAltPressed}
                         isExecutingRef={isExecutingRef}
+                        keepConfigRef={keepConfigRef}
                         handleButtonClick={handleButtonClick}
                         setHistoryMap={setHistoryMap}
                     />

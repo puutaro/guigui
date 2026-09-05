@@ -26,6 +26,10 @@ export function GetSendRequest() {
   return window['go']['main']['App']['GetSendRequest']();
 }
 
+export function GetWindowInfo() {
+  return window['go']['main']['App']['GetWindowInfo']();
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }

@@ -127,6 +127,10 @@ func (a *App) loadAndSendJson(
 		ViewMode: sendSrcReq.ViewMode,
 		Form:     sendSrcReq.Form,
 		List:     sendSrcReq.List,
+		WindowInfo: network.WindowRequestForWebView{
+			IsKeep:       winReq.IsKeep,
+			KeepExcludes: winReq.KeepExcludes,
+		},
 	})
 
 	return nil
@@ -135,7 +139,6 @@ func minimizeGUi(
 	ctx context.Context,
 	id string,
 ) {
-
 	title := "Guigui sleeping..."
 	runtime.WindowSetTitle(ctx, title)
 	runtime.EventsEmit(ctx, "req", network.GuiRequestForWebview{

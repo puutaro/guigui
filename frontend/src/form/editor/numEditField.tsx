@@ -1,4 +1,5 @@
 import { form } from '../../../wailsjs/go/models';
+import { inputEscGuard } from '../../libs/input_esc_gaurd';
 import { is_special_str } from '../../libs/is_specaial_str';
 
 export type NumSelectFieldProps = {
@@ -42,6 +43,10 @@ export const NumEditField = ({
         step={stepVal}
         min={minVal}
         max={maxVal}
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        autoComplete="off"
         value={currentValue}
         onChange={(e) => {
           const newValue = e.target.value;
@@ -49,6 +54,9 @@ export const NumEditField = ({
               return;
           }
           setFieldValue(fieldKey, e.target.value)
+        }}
+        onKeyDown={(e) => {
+            inputEscGuard(e)
         }}
         className="border rounded-l rounded-r-none flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-right"
         style={{ padding: `${borderValue}px` }}

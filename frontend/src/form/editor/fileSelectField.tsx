@@ -1,6 +1,7 @@
 import { form } from '../../../wailsjs/go/models';
 import { SelectFile } from '../../../wailsjs/go/main/App';
 import { is_special_str } from '../../libs/is_specaial_str';
+import { inputEscGuard } from '../../libs/input_esc_gaurd';
 
 export type FileSelectFieldProps = {
   field: form.FieldDef,
@@ -22,6 +23,10 @@ export const FileSelectField = ({
       <div className="flex items-center space-x-2">
         <input 
           type="text" 
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          autoComplete="off"
           value={formValues[fieldKey] ?? field.defaultValue ?? ""} 
           onChange={(e) => {
             const newValue = e.target.value;
@@ -29,6 +34,9 @@ export const FileSelectField = ({
                 return;
             }
             setFieldValue(fieldKey, newValue)}}
+          onKeyDown={(e) => {
+              inputEscGuard(e)
+          }}
           className="border rounded flex-1"
           style={{ padding: `${borderValue}px` }}
         />

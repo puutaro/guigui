@@ -166,11 +166,26 @@ export namespace list {
 
 export namespace network {
 	
+	export class WindowRequestForWebView {
+	    isKeep: boolean;
+	    keepExcludes: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new WindowRequestForWebView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isKeep = source["isKeep"];
+	        this.keepExcludes = source["keepExcludes"];
+	    }
+	}
 	export class GuiRequestForWebview {
 	    id: string;
 	    viewMode: string;
 	    form: form.FormConfigResponse;
 	    list: list.ListConfigResponse;
+	    windowInfo: WindowRequestForWebView;
 	
 	    static createFrom(source: any = {}) {
 	        return new GuiRequestForWebview(source);
@@ -182,6 +197,7 @@ export namespace network {
 	        this.viewMode = source["viewMode"];
 	        this.form = this.convertValues(source["form"], form.FormConfigResponse);
 	        this.list = this.convertValues(source["list"], list.ListConfigResponse);
+	        this.windowInfo = this.convertValues(source["windowInfo"], WindowRequestForWebView);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

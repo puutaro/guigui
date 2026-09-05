@@ -3,6 +3,7 @@ import {ExitByHidden, WriteStdoutAndExitByHidden} from "../exit/exit";
 import {SuggestHistoryItem} from "./FormComponent";
 import {saveAllTxtHistory} from "./editor/suggest";
 import {makeKey} from "./editor/makeKey";
+import { KeepConfig } from '../type/keepInfo';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -13,16 +14,19 @@ export const handleButtonClick = async (
     formValuesRef: React.MutableRefObject<Record<string, string>>,
     isExecutingRef: React.MutableRefObject<boolean>,
     setHistoryMap: (value: React.SetStateAction<Record<string, SuggestHistoryItem[]>>) => void,
+    keepConfig: KeepConfig,
 ): Promise<void> => {
     if (isExecutingRef.current) {
       return;
     }
-    isExecutingRef.current = true;
+    let currentConfig = formConfigRef.current;
     if (btn.exitCode == 1){
-      await ExitByHidden(btn.exitCode);
+      await ExitByHidden(
+        btn.exitCode,
+        keepConfig,
+      );
       return
     }
-    let currentConfig = formConfigRef.current;
     let fields = currentConfig?.fields || [];
     let retries = 0;
     while (fields.length === 0 && retries < 5) {
@@ -59,6 +63,7 @@ export const handleButtonClick = async (
     await WriteStdoutAndExitByHidden(
         outputString,
         btn.exitCode,
+        keepConfig,
     );
   };
 

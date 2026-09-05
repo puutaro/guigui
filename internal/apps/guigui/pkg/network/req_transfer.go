@@ -16,18 +16,25 @@ type GuiRequest struct {
 	WindowRequest `json:"geometry"`
 }
 type GuiRequestForWebview struct {
-	Id       string                  `json:"id"`
-	ViewMode string                  `json:"viewMode"`
-	Form     form.FormConfigResponse `json:"form"`
-	List     list.ListConfigResponse `json:"list"`
+	Id         string                  `json:"id"`
+	ViewMode   string                  `json:"viewMode"`
+	Form       form.FormConfigResponse `json:"form"`
+	List       list.ListConfigResponse `json:"list"`
+	WindowInfo WindowRequestForWebView `json:"windowInfo"`
+}
+type WindowRequestForWebView struct {
+	IsKeep       bool     `json:"isKeep"`
+	KeepExcludes []string `json:"keepExcludes"`
 }
 type WindowRequest struct {
-	Width    int  `json:"width"`
-	Height   int  `json:"height"`
-	IsCenter bool `json:"is_center"`
-	X        *int `json:"x"`
-	Y        *int `json:"y"`
-	IsHidden bool `json:"IsHidden"`
+	Width        int      `json:"width"`
+	Height       int      `json:"height"`
+	IsCenter     bool     `json:"is_center"`
+	X            *int     `json:"x"`
+	Y            *int     `json:"y"`
+	IsHidden     bool     `json:"isHidden"`
+	IsKeep       bool     `json:"isKeep"`
+	KeepExcludes []string `json:"keepExcludes"`
 }
 
 func (req GuiRequest) SendReqJson() error {

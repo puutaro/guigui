@@ -14,6 +14,7 @@ import (
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
@@ -108,6 +109,24 @@ func (a *App) GetListConfig() list.ListConfigResponse {
 		return list.ListConfigResponse{}
 	}
 	return a.listCmd.GetListConfig()
+}
+func (a *App) GetWindowInfo() network.WindowRequestForWebView {
+	isKeep := false
+	var keepExcludes []string
+	switch {
+	case a.formCmd != nil:
+		formCmd := a.formCmd
+		isKeep = formCmd.Keep
+		keepExcludes = text.SplitKeepExclude(formCmd.KeepExcludes, ",")
+	case a.listCmd != nil:
+		listCmd := a.listCmd
+		isKeep = listCmd.Keep
+		keepExcludes = text.SplitKeepExclude(listCmd.KeepExcludes, ",")
+	}
+	return network.WindowRequestForWebView{
+		IsKeep:       isKeep,
+		KeepExcludes: keepExcludes,
+	}
 }
 
 func (a *App) SelectFile(title string) (string, error) {

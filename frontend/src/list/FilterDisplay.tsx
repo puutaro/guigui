@@ -1,7 +1,9 @@
 import { outputLineByHidden } from "./libs/outputLineByHidden";
 import { renderForFilterText } from "../libs/renderForFilterText";
+import { KeepConfig } from "../type/keepInfo";
 
 export type FilterDisplayProps = {
+    keepConfigRef: React.MutableRefObject<KeepConfig>,
     listItemRefs: React.MutableRefObject<(HTMLLIElement | null)[]>;
     filterItemOpjs: {
         lineKey: string;
@@ -16,6 +18,7 @@ export type FilterDisplayProps = {
 };
 
 export const FilterDisplay = ({
+                                  keepConfigRef,
                                   listItemRefs,
                                   filterItemOpjs,
                                   setSearchQuery,
@@ -48,7 +51,10 @@ export const FilterDisplay = ({
                         }}
                         onDoubleClick={() => {
                             setSearchQuery("");
-                            outputLineByHidden(obj.lineKey ?? "");
+                            outputLineByHidden(
+                                obj.lineKey ?? "",
+                                keepConfigRef.current,
+                            );
                         }}
                         style={{
                             padding: `${borderValue}px`,

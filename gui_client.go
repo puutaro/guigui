@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
@@ -31,24 +32,28 @@ func sendReqToGui(
 		id = formCmd.Id
 		formConfig = formCmd.GetFormConfig()
 		winReq = network.WindowRequest{
-			Width:    formCmd.Width,
-			Height:   formCmd.Height,
-			IsCenter: formCmd.Center,
-			X:        formCmd.X,
-			Y:        formCmd.Y,
-			IsHidden: formCmd.WindowOptions.Hidden,
+			Width:        formCmd.Width,
+			Height:       formCmd.Height,
+			IsCenter:     formCmd.Center,
+			X:            formCmd.X,
+			Y:            formCmd.Y,
+			IsHidden:     formCmd.WindowOptions.Hidden,
+			IsKeep:       formCmd.WindowOptions.Keep,
+			KeepExcludes: text.SplitKeepExclude(formCmd.KeepExcludes, ","),
 		}
 	case appConfig.ListCmd != nil:
 		listCmd := appConfig.ListCmd
 		id = listCmd.Id
 		listConfig = listCmd.GetListConfig()
 		winReq = network.WindowRequest{
-			Width:    listCmd.Width,
-			Height:   listCmd.Height,
-			IsCenter: listCmd.Center,
-			X:        listCmd.X,
-			Y:        listCmd.Y,
-			IsHidden: listCmd.WindowOptions.Hidden,
+			Width:        listCmd.Width,
+			Height:       listCmd.Height,
+			IsCenter:     listCmd.Center,
+			X:            listCmd.X,
+			Y:            listCmd.Y,
+			IsHidden:     listCmd.WindowOptions.Hidden,
+			IsKeep:       listCmd.WindowOptions.Keep,
+			KeepExcludes: text.SplitKeepExclude(listCmd.KeepExcludes, ","),
 		}
 	case appConfig.WindowCmd != nil:
 		id = appConfig.WindowCmd.Id

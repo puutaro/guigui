@@ -128,6 +128,10 @@ export const CustomSuggestInput = ({
         <div ref={containerRef} className="relative w-full">
             <input
                 type="text"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                autoComplete="off"
                 value={displayText}
                 onFocus={(e) => {
                     handleSelect(e);
