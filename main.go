@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
@@ -121,6 +122,10 @@ func startsGui(appConfig *args.AppConfig) error {
 	)
 
 	windowIconBytes := image.LoadIconBytes(windowConfig.WindowIcon)
+	framelessBool := true
+	if runtime.GOOS == "linux" {
+		framelessBool = false
+	}
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title: windowConfig.Title,
@@ -147,7 +152,7 @@ func startsGui(appConfig *args.AppConfig) error {
 			Assets: assets,
 		},
 		// ★ 遅延と背面隠れの主因となる Frameless（枠なし）を false（標準ウィンドウ）に修正
-		Frameless:        true,
+		Frameless:        framelessBool,
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.sendAllQuitSignal,
