@@ -82,7 +82,7 @@ export const  ListComponent =
                     }
                     // フォーカスは常に input 要素へ
                     searchInputRef.current?.focus();
-                }, 200)
+                }, 300)
             });
             // タイマーとrAFの両方をクリーンアップ
             return () => {
