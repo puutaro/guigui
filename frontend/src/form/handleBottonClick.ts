@@ -4,6 +4,7 @@ import {SuggestHistoryItem} from "./FormComponent";
 import {saveAllTxtHistory} from "./editor/suggest";
 import {makeKey} from "./editor/makeKey";
 import { KeepConfig } from '../type/keepInfo';
+import { WriteStderr } from '../../wailsjs/go/main/App';
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 

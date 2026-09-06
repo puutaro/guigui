@@ -62,8 +62,8 @@ export const CustomSelectField = ({
     const handleKeyDown = (e: React.KeyboardEvent) => {
         e.preventDefault()
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.stopPropagation();
-            setIsOpen(false);
+            // e.stopPropagation();
+            // setIsOpen(false);
             return;
         }
         // 閉じていてEnter/Space/上下キーを押したら開く

@@ -14,10 +14,8 @@ import (
 )
 
 type ListCmd struct {
-	List    string `arg:"positional" help:"string contents separated by newline"`
-	IsStdin bool   `arg:"--is-stdin,hidden" default:"false" help:"use gui server luanch"`
-	// List        string   `arg:"--list" help:"string contents separated by newline"`
-	// ListFile    bool     `arg:"--list-file,hidden" help:""`
+	List        string   `arg:"positional" help:"string contents separated by newline"`
+	IsStdin     bool     `arg:"--is-stdin,hidden" default:"false" help:"use gui server luanch"`
 	Reloads     []string `arg:"--reload,separate" help:"(alt/option)+key:shell reload list by shell stdout"`
 	Executes    []string `arg:"--execute,separate" help:"(alt/option)+key:exec shell by shell stdout"`
 	ExecQuits   []string `arg:"--exec-quit,separate" help:"(alt/option)+key:exit code:exec shell with exit by shell stdout"`
@@ -87,7 +85,7 @@ func (cmd *ListCmd) GetListConfig() ListConfigResponse {
 		Id:          cmd.Id,
 		WindowIcon:  image.ImageToBase64(cmd.WindowIcon),
 		Title:       cmd.Title,
-		Text:        text.TextUnescapeNewlinesTab(cmd.Text),
+		Text:        text.TextUnescapeNewlinesTab(cmd.Text.String(false)),
 		List:        strings.Split(cmd.List, "\n"),
 		Borders:     cmd.Borders,
 		FontSize:    cmd.FontSize,

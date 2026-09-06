@@ -6,43 +6,37 @@ import { NumEditField } from './editor/numEditField';
 import { BtnField } from './editor/btnField';
 import { BottomButton } from './bottomButton/bottomButton';
 import { handleButtonClick } from './handleBottonClick';
-import { useUndoRedo} from './hooks/useAndoRedo';
-import { useKeyboardShortcut} from './hooks/useFormKeyShortcut';
-import {useInitSuggest} from "./editor/useSuggest";
-import {makeKey} from "./editor/makeKey";
-import {CustomSuggestInput} from "./editor/CustomSuggestInput"
-import {WriteStderr, WriteStdout} from "../../wailsjs/go/main/App";
-import {CustomSelectField} from "./editor/CustomSelectField";
+import { useUndoRedo } from './hooks/useAndoRedo';
+import { useKeyboardShortcut } from './hooks/useFormKeyShortcut';
+import { useInitSuggest } from "./editor/useSuggest";
+import { makeKey } from "./editor/makeKey";
+import { CustomSuggestInput } from "./editor/CustomSuggestInput";
+import { CustomSelectField } from "./editor/CustomSelectField";
 import { is_special_str } from '../libs/is_specaial_str';
 import { KeepConfig } from '../type/keepInfo';
 import { inputEscGuard } from '../libs/input_esc_gaurd';
+import { WriteStderr } from '../../wailsjs/go/main/App';
 
-// サジェスト用の履歴データ型
 export type SuggestHistoryItem = {
     value: string;
     timestamp: number;
 };
 
-// 親から受け取るpropsの型定義
 export type FormComponentProps = {
     formConfig: form.FormConfigResponse | null;
     keepConfigRef: React.MutableRefObject<KeepConfig>;
     borderValue: number;
-}
+};
 
 export const FormComponent = ({
-                                  formConfig,
-                                  keepConfigRef,
-                                  borderValue,
-                              }: FormComponentProps) => {
+    formConfig,
+    keepConfigRef,
+    borderValue,
+}: FormComponentProps) => {
 
-    // Altキーが押されているかどうかを管理するステート
     const [isAltPressed, setIsAltPressed] = useState(false);
-
-    // キーごとの入力履歴を管理するステート ({ [fieldKey]: SuggestHistoryItem[] })
     const [historyMap, setHistoryMap] = useState<Record<string, SuggestHistoryItem[]>>({});
 
-    // 1. undo/redo フックでフォーム全体の値を管理（初期値は空のオブジェクト）
     const {
         state: formValues,
         set: setFormValues,
@@ -54,100 +48,14 @@ export const FormComponent = ({
     } = useUndoRedo<Record<string, string>>({});
 
     useKeyboardShortcut({
-        onUndo: () => {
-            if (canUndo) undo();
-        },
-        onRedo: () => {
-            if (canRedo) redo();
-        },
+        onUndo: () => { if (canUndo) undo(); },
+        onRedo: () => { if (canRedo) redo(); },
     });
 
     const isAltPressedRef = useRef(false);
+    const isExecutingRef = useRef(false);
 
-    useInitSuggest(
-        formConfig,
-        setHistoryMap,
-    )
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-        switch (e.key) {
-            case 'Alt':
-                isAltPressedRef.current = true;
-                setIsAltPressed(true);
-                break;
-        }
-        const isAltActive = e.altKey || isAltPressedRef.current;
-        const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
-        const currentConfig = formConfigRef.current;
-        if (!currentConfig?.buttons) return;
-        // 1. Alt / Option ショートカットの判定（ボタン用）
-        if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
-            const pressedKey = e.code.replace('Key', '').toLowerCase();
-            const targetButton = currentConfig.buttons.find(btn => {
-                if (!btn.label || btn.label.length === 0) return false;
-                return btn.label.charAt(0).toLowerCase() === pressedKey;
-            });
-            if (targetButton) {
-                e.preventDefault();
-                handleButtonClick(
-                    formConfigRef,
-                    targetButton,
-                    formValuesRef,
-                    isExecutingRef,
-                    setHistoryMap,
-                    keepConfigRef.current,
-                );
-                return;
-            }
-        }
-        // 2. Ctrl + Enter ショートカットの判定
-        const isCtrlActive = e.ctrlKey;
-        if (isCtrlActive && e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            const pressedKey = 'o';
-            const targetButton = currentConfig.buttons.find(btn => {
-                const btnLabel = btn.label;
-                if (!btnLabel || btnLabel.length === 0) return false;
-                return btnLabel.charAt(0).toLowerCase() === pressedKey;
-            });
-            if (targetButton) {
-                e.preventDefault();
-                handleButtonClick(
-                    formConfigRef,
-                    targetButton,
-                    formValuesRef,
-                    isExecutingRef,
-                    setHistoryMap,
-                    keepConfigRef.current,
-                );
-            }
-        }
-    };
-        const handleKeyUp = (e: KeyboardEvent) => {
-            switch (e.key){
-                case 'Alt':
-                    isAltPressedRef.current = false;
-                    setIsAltPressed(false);
-                    break;
-            }
-        };
-
-        // ウィンドウのフォーカスが外れたときなどのためにAltキーの状態をリセット
-        const handleBlur = () => {
-            isAltPressedRef.current = false;
-            setIsAltPressed(false);
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        window.addEventListener('blur', handleBlur);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, []);
+    useInitSuggest(formConfig, setHistoryMap);
 
     const formConfigRef = useRef(formConfig);
     const formValuesRef = useRef(formValues);
@@ -156,37 +64,127 @@ export const FormComponent = ({
         formValuesRef.current = formValues;
     }, [formConfig, formValues]);
 
+    // 画面ロード時、最初の入力フィールドがあればそこへフォーカスする
     const firstFieldRef = useRef<HTMLDivElement | null>(null);
     const hasFocusedRef = useRef(false);
+    const firstFocusableIndex = formConfig?.fields.findIndex(field => field.type !== 'LBL') ?? -1;
+
     useEffect(() => {
         if (!formConfig || hasFocusedRef.current) return;
         const timer = setTimeout(() => {
             hasFocusedRef.current = true;
-            const target = firstFieldRef.current?.querySelector('input, select, button, [tabindex="0"]') as HTMLElement;
-            target?.focus();
-            if (target instanceof HTMLInputElement) {
-                target.select();
+            const target = firstFieldRef.current?.querySelector(
+                'input, select, button, [tabindex="0"]'
+            ) as HTMLElement | null;
+            if (target) {
+                target.focus();
+                if (target instanceof HTMLInputElement) {
+                    target.select();
+                }
             }
         }, 200);
         return () => clearTimeout(timer);
     }, [formConfig]);
 
-    // 取得したデフォルト値を初期値としてフォームの値ステートにセットする
-    const initialValues: Record<string, string> = {};
-    formConfig?.fields.forEach((field, index) => {
-        const key = `${index}_${field.label}`;
-        initialValues[key] = field.defaultValue || "";
-    });
+    // グローバルキーイベントの登録（どこにフォーカスがあっても確実に1回だけ発火）
     useEffect(() => {
-        setFormValues(initialValues);
-    }, []);
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Alt') {
+                isAltPressedRef.current = true;
+                setIsAltPressed(true);
+            }
 
-    const firstFocusableIndex = formConfig?.fields.findIndex(field => 'LBL' != field.type) ?? -1;
-    const isExecutingRef = useRef(false);
-    const fontSize = formConfig?.fontSize ?? 10
-    const titleFontSize = (fontSize * 110) / 100
-    const titlePadding = (borderValue * 110) / 100
-    const labelFontSize = (fontSize * 3) / 4
+            const currentConfig = formConfigRef.current;
+            if (!currentConfig?.buttons) return;
+
+            const isAltActive = e.altKey || isAltPressedRef.current;
+            const isModifierKey = ['Alt', 'Shift', 'Control', 'Enter', 'Tab', ' '].includes(e.key);
+
+            // 1. Alt ショートカットの判定（ボタン用）
+            if (isAltActive && !isModifierKey && e.code.startsWith('Key')) {
+                const pressedKey = e.code.replace('Key', '').toLowerCase();
+                const targetButton = currentConfig.buttons.find(btn => {
+                    if (!btn.label || btn.label.length === 0) return false;
+                    return btn.label.charAt(0).toLowerCase() === pressedKey;
+                });
+                if (targetButton) {
+                    e.preventDefault();
+                    handleButtonClick(
+                        formConfigRef,
+                        targetButton,
+                        formValuesRef,
+                        isExecutingRef,
+                        setHistoryMap,
+                        keepConfigRef.current,
+                    );
+                    return;
+                }
+            }
+
+            // 2. Ctrl + Enter ショートカットの判定
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                const pressedKey = 'o';
+                const targetButton = currentConfig.buttons.find(btn => {
+                    const btnLabel = btn.label;
+                    if (!btnLabel || btnLabel.length === 0) return false;
+                    return btnLabel.charAt(0).toLowerCase() === pressedKey;
+                });
+                if (targetButton) {
+                    handleButtonClick(
+                        formConfigRef,
+                        targetButton,
+                        formValuesRef,
+                        isExecutingRef,
+                        setHistoryMap,
+                        keepConfigRef.current,
+                    );
+                }
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === 'Alt') {
+                isAltPressedRef.current = false;
+                setIsAltPressed(false);
+            }
+        };
+
+        const handleBlur = () => {
+            isAltPressedRef.current = false;
+            setIsAltPressed(false);
+        };
+
+        // イベントリスナーの登録
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+
+        // ★ クリーンアップ処理（多重定義・二重発火を防止）
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, []); // 依存配列は空（コンポーネント生成時に1度だけ張り、破棄時に剥がす）
+
+    // 初期値のセット
+    useEffect(() => {
+        if (!formConfig?.fields) return;
+        const initialValues: Record<string, string> = {};
+        formConfig.fields.forEach((field, index) => {
+            const key = makeKey(index, field.label);
+            initialValues[key] = field.defaultValue || "";
+        });
+        setFormValues(initialValues);
+    }, [formConfig]);
+
+    const fontSize = formConfig?.fontSize ?? 10;
+    const titleFontSize = (fontSize * 110) / 100;
+    const titlePadding = (borderValue * 110) / 100;
+    const labelFontSize = (fontSize * 3) / 4;
+
     return (
         <div
             id="form-view"
@@ -200,7 +198,7 @@ export const FormComponent = ({
                         padding: `${titlePadding}px`,
                     }}
                 >
-                    {formConfig?.text ?? ""}
+                    {formConfig.text}
                 </h1>
             )}
             {!formConfig ? (
@@ -210,31 +208,23 @@ export const FormComponent = ({
                     className="flex flex-col h-full overflow-hidden"
                     style={{ padding: `${borderValue}px` }}
                 >
-                    {/* --- スクロール可能なフィールド領域 --- */}
                     <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                         {formConfig.fields.map((field, index) => {
                             const key = makeKey(index, field.label);
                             const isFirstTarget = index === firstFocusableIndex;
-                            let labelDisplayValue = 'inline';
-                            const btnList = ['BTN', 'FBTN'] as const;
-                            const labelHIddenList = ['LBL', ...btnList];
-                            switch (true) {
-                                case (labelHIddenList as readonly string[]).includes(field.type): {
-                                    labelDisplayValue = 'none';
-                                    break;
-                                }
-                            }
+                            const isLabelHidden = ['LBL', 'BTN', 'FBTN'].includes(field.type);
+
                             return (
                                 <div
                                     ref={isFirstTarget ? firstFieldRef : undefined}
-                                    key={index}
+                                    key={key}
                                     className="flex flex-col"
                                     style={{ paddingBottom: `${borderValue}px` }}
                                 >
                                     <label
                                         className="font-bold mb-1"
                                         style={{
-                                            display: `${labelDisplayValue}`,
+                                            display: isLabelHidden ? 'none' : 'inline',
                                             fontSize: `${labelFontSize}px`,
                                             padding: `${borderValue}px`
                                         }}
@@ -244,32 +234,27 @@ export const FormComponent = ({
 
                                     {field.type === 'TXT' && (
                                         <input
-                                          type="text"
-                                          autoCorrect="off"
-                                          autoCapitalize="off"
-                                          spellCheck="false"
-                                          autoComplete="off"
-                                          value={formValues[key] ?? field.defaultValue ?? ""}
-                                          onChange={(e) => {
-                                            const newValue = e.target.value;
-                                            if (is_special_str(newValue)) {
-                                                return;
-                                            }
-                                            // ★ 2. onChange で return せず、そのままステートを更新する
-                                            setFieldValue(key, newValue);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            // ★ 3. Mac Option(Alt)+アルファベットによる特殊文字入力を onKeyDown で物理カット
-                                            if (e.altKey && !['Alt', 'Shift', 'Control', 'Meta', 'Tab'].includes(e.key)) {
-                                                e.preventDefault();
-                                            }
-                                            // 既存の Esc / Backspace / IME ガード関数
-                                            inputEscGuard(e);
-                                        }}
-                                          className="border rounded"
-                                          style={{ padding: `${borderValue}px` }}
+                                            type="text"
+                                            autoCorrect="off"
+                                            autoCapitalize="off"
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            value={formValues[key] ?? field.defaultValue ?? ""}
+                                            onChange={(e) => {
+                                                const newValue = e.target.value;
+                                                if (is_special_str(newValue)) return;
+                                                setFieldValue(key, newValue);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.altKey && !['Alt', 'Shift', 'Control', 'Meta', 'Tab'].includes(e.key)) {
+                                                    e.preventDefault();
+                                                }
+                                                inputEscGuard(e);
+                                            }}
+                                            className="border rounded"
+                                            style={{ padding: `${borderValue}px` }}
                                         />
-                                      )}
+                                    )}
                                     {field.type === 'STXT' && (
                                         <CustomSuggestInput
                                             fieldKey={key}
@@ -287,8 +272,9 @@ export const FormComponent = ({
                                             formValues={formValues}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
-                                        />                                    )}
-                                    {(btnList as readonly string[]).includes(field.type) && (
+                                        />
+                                    )}
+                                    {['BTN', 'FBTN'].includes(field.type) && (
                                         <BtnField
                                             field={field}
                                             fieldKey={key}
@@ -319,7 +305,7 @@ export const FormComponent = ({
                                             className="text-gray-600 block whitespace-pre-wrap"
                                             style={{ padding: `${borderValue}px` }}
                                         >
-                                          {field.label}
+                                            {field.label}
                                         </span>
                                     )}
                                     {field.type === 'NUM' && (

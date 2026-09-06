@@ -48,7 +48,6 @@ export const WriteStdoutAndExitByHidden = async (
   keepConfig: KeepConfig,
 ) => {
     if (!keepConfig.isKeep){
-        (window as any).runtime.WindowMinimise();
         await MinimizeGui()
     }
     await WriteStdoutByHidden(

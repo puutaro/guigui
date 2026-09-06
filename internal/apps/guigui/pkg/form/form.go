@@ -29,13 +29,13 @@ type ButtonDef struct {
 }
 
 type FormCmd struct {
-	ItemSeparator    string   `arg:"--item-separator" default:"!" help:"Separator for list items"`
-	Separator        string   `arg:"--separator" default:"|" help:"Separator for output values"`
-	DateFormat       string   `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
-	Fields           []string `arg:"--field,separate" help:"Define fields in the form"`
-	FieldValues      []string `arg:"positional,separate" help:"field values"`
-	SelectableLabels bool     `arg:"--selectable-labels" help:"stub for yad comp"`
-	NoButtons        bool     `arg:"--no-buttons" help:"stub for yad comp"`
+	ItemSeparator    string            `arg:"--item-separator" default:"!" help:"Separator for list items"`
+	Separator        string            `arg:"--separator" default:"|" help:"Separator for output values"`
+	DateFormat       string            `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
+	Fields           []text.Base64Text `arg:"--field,separate" help:"Define fields in the form"`
+	FieldValues      []text.Base64Text `arg:"positional,separate" help:"field values"`
+	SelectableLabels bool              `arg:"--selectable-labels" help:"stub for yad comp"`
+	NoButtons        bool              `arg:"--no-buttons" help:"stub for yad comp"`
 	window.WindowOptions
 	buttons.ButtonOptions
 	gui.GuiOptions
@@ -80,9 +80,9 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		fieldValues := cmd.FieldValues
 		fValue := ""
 		if index < len(fieldValues) {
-			fValue = fieldValues[index]
+			fValue = fieldValues[index].String(false)
 		}
-		parsed := parseFieldString(raw, fValue, cmd.ItemSeparator)
+		parsed := parseFieldString(raw.String(true), fValue, cmd.ItemSeparator)
 		parsedFields = append(parsedFields, parsed)
 	}
 	var parsedButtons []ButtonDef
@@ -108,7 +108,7 @@ func (cmd *FormCmd) GetFormConfig() FormConfigResponse {
 		SubId:         cmd.SubId,
 		WindowIcon:    image.ImageToBase64(cmd.WindowIcon),
 		Title:         cmd.Title,
-		Text:          text.TextUnescapeNewlinesTab(cmd.Text),
+		Text:          text.TextUnescapeNewlinesTab(cmd.Text.String(false)),
 		Borders:       cmd.Borders,
 		FontSize:      cmd.FontSize,
 		ItemSeparator: cmd.ItemSeparator,
@@ -150,6 +150,7 @@ func capitalizeFirst(s string) string {
 
 // 文字列パースのヘルパー（簡易版）
 func parseFieldString(raw, fValue, itemSep string) FieldDef {
+
 	// 実際には yad の書式（--field="ラベル:タイプ" 初期値 のようなスペース区切りやイコール区切り）に合わせて堅牢にパースします
 	label, fType := splitByLastColon(raw)
 	if fType == "" {
