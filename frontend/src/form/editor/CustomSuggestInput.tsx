@@ -156,39 +156,44 @@ export const CustomSuggestInput = ({
                     setIsOpen(true);
                 }}
                 onKeyDown={(e) => {
-                    if (!shouldShowSuggest) return;
-                    switch (e.key) {
-                        case 'ArrowDown': {
-                            e.preventDefault();
-                            setSelectedSugIndex((prev) =>
-                                prev < 0 || prev >= filtered.length - 1 ? 0 : prev + 1
-                            );
-                            return;
-                        }
-                        case 'ArrowUp': {
-                            e.preventDefault();
-                            setSelectedSugIndex((prev) =>
-                                prev <= 0 ? filtered.length - 1 : prev - 1
-                            );
-                            return;
-                        }
-                        case 'Enter': {
-                            if (selectedSugIndex < 0) return;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Enterを押した時だけ input へ挿入して閉じる
-                            setFieldValue(fieldKey, filtered[selectedSugIndex].lineKey);
-                            setIsOpen(false);
-                            return;
-                        }
-                        case 'Escape': {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setIsOpen(false);
-                            return;
-                        }
-                    }
-                }}
+                    // 1. 修飾キー（Shift, Control, Meta 等）単体の押し込みは無視
+                    const isModifierKeyOnly = ['Alt', 'Shift', 'Control', 'Meta', 'Tab'].includes(e.key);
+                    // ★ 2. Alt (Option) キーが押されている場合の処理
+                    if (e.altKey && !isModifierKeyOnly) {
+                    // ★ 入力欄に Mac 特殊文字（å, ≈, ç 等）が出力されるのを物理カット！
+                    e.preventDefault();
+                    return;
+                }
+                // ★ 3. IME 変換中（日本語の確定Enterや変換Esc）はブラウザ/IMEに完全に任せる
+                if (e.nativeEvent.isComposing) {
+                    return;
+                }
+                // ★ 4. サジェストメニューが開いている時だけ「上下矢印」「決定Enter」「サジェスト閉じEsc」を横取り
+                if (!shouldShowSuggest) return
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault(); // input 内のカーソル移動を止めてサジェスト移動
+                    setSelectedSugIndex((prev) => (prev < filtered.length - 1 ? prev + 1 : 0));
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedSugIndex((prev) => (prev > 0 ? prev - 1 : filtered.length - 1));
+                    return;
+                }
+                if (e.key === 'Enter' && selectedSugIndex >= 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setFieldValue(fieldKey, filtered[selectedSugIndex].lineKey);
+                    setIsOpen(false);
+                    return;
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsOpen(false); // サジェストを閉じる
+                    return;
+                }
+            }}
                 className="border rounded w-full"
                 style={{
                     padding: `${borderValue}px`,
