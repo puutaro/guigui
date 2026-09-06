@@ -70,15 +70,25 @@ export const  ListComponent =
         const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
         // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
         useEffect(() => {
-            requestAnimationFrame(() => {
-                const targetListElement = listItemRefs.current[selectedIndex];
-                if (targetListElement) {
-                    // スクロールエリア内に入ってくるよう表示位置だけ調整
-                    targetListElement.scrollIntoView({ block: 'nearest' });
-                }
-                // フォーカスは常に input 要素へ
-                searchInputRef.current?.focus();
+            let rafId: number;
+            let timerId: ReturnType<typeof setTimeout>;
+            rafId = requestAnimationFrame(() => {
+                // 描画フレーム後に少しだけ遅延を入れる
+                timerId = setTimeout(()=>{
+                    const targetListElement = listItemRefs.current[selectedIndex];
+                    if (targetListElement) {
+                        // スクロールエリア内に入ってくるよう表示位置だけ調整
+                        targetListElement.scrollIntoView({ block: 'nearest' });
+                    }
+                    // フォーカスは常に input 要素へ
+                    searchInputRef.current?.focus();
+                }, 200)
             });
+            // タイマーとrAFの両方をクリーンアップ
+            return () => {
+                cancelAnimationFrame(rafId);
+                clearTimeout(timerId);
+            };
         }, [selectedIndex, filteredBodyItemObjs]);
         listItemRefs.current = [];
         // 最後に「確定」されていたテキストを保持する Ref

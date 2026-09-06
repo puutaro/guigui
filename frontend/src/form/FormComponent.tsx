@@ -71,19 +71,27 @@ export const FormComponent = ({
 
     useEffect(() => {
         if (!formConfig || hasFocusedRef.current) return;
-        const timer = setTimeout(() => {
-            hasFocusedRef.current = true;
-            const target = firstFieldRef.current?.querySelector(
-                'input, select, button, [tabindex="0"]'
-            ) as HTMLElement | null;
-            if (target) {
+        let rafId: number;
+        let timerId: ReturnType<typeof setTimeout>;
+        rafId = requestAnimationFrame(() => {
+            // 描画フレーム後に少しだけ遅延を入れる
+            timerId = setTimeout(() => {
+                hasFocusedRef.current = true;
+                const target = firstFieldRef.current?.querySelector(
+                    'input, select, button, [tabindex="0"]'
+                ) as HTMLElement | null;
+                if (!target) return
                 target.focus();
                 if (target instanceof HTMLInputElement) {
                     target.select();
                 }
-            }
-        }, 200);
-        return () => clearTimeout(timer);
+            }, 200);
+        });
+        // タイマーとrAFの両方をクリーンアップ
+        return () => {
+            cancelAnimationFrame(rafId);
+            clearTimeout(timerId);
+        };
     }, [formConfig]);
 
     // グローバルキーイベントの登録（どこにフォーカスがあっても確実に1回だけ発火）
