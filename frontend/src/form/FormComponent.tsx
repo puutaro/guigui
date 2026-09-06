@@ -104,6 +104,8 @@ export const FormComponent = ({
         // 2. Ctrl + Enter ショートカットの判定
         const isCtrlActive = e.ctrlKey;
         if (isCtrlActive && e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
             const pressedKey = 'o';
             const targetButton = currentConfig.buttons.find(btn => {
                 const btnLabel = btn.label;
