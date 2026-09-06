@@ -9,5 +9,8 @@
   "author": {
     "name": "puutaro",
     "email": "hoperstep@gmail.com"
+  },
+  "info": {
+    "LSUIElement": "0"
   }
 }

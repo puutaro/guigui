@@ -119,8 +119,7 @@ func startsGui(appConfig *args.AppConfig) error {
 	app := NewApp(
 		appConfig,
 	)
-
-	windowIconBytes := image.LoadIconBytes(windowConfig.WindowIcon)
+	image.ApplyMacAppIcon(app.WindowIconBytes)
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title: windowConfig.Title,
@@ -128,7 +127,7 @@ func startsGui(appConfig *args.AppConfig) error {
 			DisableWindowIcon: false,
 		},
 		Linux: &linux.Options{
-			Icon: windowIconBytes,
+			Icon: app.WindowIconBytes,
 		},
 		Mac: &mac.Options{
 			TitleBar:             mac.TitleBarHidden(),
@@ -138,7 +137,7 @@ func startsGui(appConfig *args.AppConfig) error {
 			// macOSに「通常の最前面アプリ」として認識させ、起動時に後ろに回るのを防ぐ
 			About: &mac.AboutInfo{
 				Title: windowConfig.Title,
-				Icon:  windowIconBytes,
+				Icon:  app.WindowIconBytes,
 			},
 		},
 		Width:  windowConfig.Width,

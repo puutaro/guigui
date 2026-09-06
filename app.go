@@ -14,6 +14,7 @@ import (
 
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
+	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
 	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
@@ -37,9 +38,10 @@ type App struct {
 	windowPositionConfig windowPositionConfig
 	windowSizeConfig     windowSizeConfig
 
-	formCmd   *form.FormCmd
-	listCmd   *list.ListCmd
-	windowCmd *windowcmd.WindowCmd
+	formCmd         *form.FormCmd
+	listCmd         *list.ListCmd
+	windowCmd       *windowcmd.WindowCmd
+	WindowIconBytes []byte
 }
 
 func NewApp(appConfig *args.AppConfig) *App {
@@ -59,8 +61,9 @@ func NewApp(appConfig *args.AppConfig) *App {
 			width:  windowConfig.Width,
 			height: windowConfig.Height,
 		},
-		formCmd: appConfig.FormCmd,
-		listCmd: appConfig.ListCmd,
+		formCmd:         appConfig.FormCmd,
+		listCmd:         appConfig.ListCmd,
+		WindowIconBytes: image.LoadIconBytes(windowConfig.WindowIcon),
 	}
 }
 
@@ -232,6 +235,9 @@ func (a *App) startup(ctx context.Context) {
 			fmt.Fprintf(os.Stderr, "Info: update miss: %s\n", err.Error())
 		}
 	}()
+	if len(a.WindowIconBytes) > 0 {
+		image.ApplyMacAppIcon(a.WindowIconBytes)
+	}
 	go a.startGuiServer(
 		ctx,
 	)
