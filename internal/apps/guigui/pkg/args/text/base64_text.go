@@ -1,23 +1,36 @@
 package text
 
 import (
+	"bytes"
 	"encoding/base64"
+	"fmt"
+	"os"
 	"strings"
 )
 
 type Base64Text string
 
 func (b *Base64Text) UnmarshalText(text []byte) error {
-	decodedBytes, err := base64.StdEncoding.DecodeString(string(text))
+	str := string(bytes.TrimSpace(text))
+	base64Prefix := "base64://"
+	if !strings.HasPrefix(str, base64Prefix) {
+		*b = Base64Text(str)
+		return nil
+	}
+	// "base64:" で始まっている場合のみデコードを実行
+	rawBase64 := strings.TrimSpace(
+		strings.TrimPrefix(str, base64Prefix),
+	)
+	decodedBytes, err := base64.StdEncoding.DecodeString(rawBase64)
 	if err == nil {
 		*b = Base64Text(decodedBytes)
-	} else {
-		*b = Base64Text(text)
+		return nil
 	}
+	fmt.Fprintf(os.Stderr, "failure to decode base64: %s", str)
+	*b = Base64Text(str)
 	return nil
 }
 
-// Stringer インターフェースを実装しておくと、fmt や他の関数に直接渡せます
 func (b Base64Text) String(isTrimEndNewLine bool) string {
 	if isTrimEndNewLine {
 		return strings.TrimSuffix(string(b), "\n")
