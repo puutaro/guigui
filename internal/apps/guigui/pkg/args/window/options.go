@@ -4,7 +4,7 @@ import "github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
 
 type WindowOptions struct {
 	Title        string          `arg:"--title" help:"window title string"`
-	Text         text.Base64Text `arg:"--text" help:"description message"`
+	Text         text.Base64Text `arg:"--text" help:"description message (reco 'base64://' prefix about multiple line)"`
 	Borders      int             `arg:"--borders" default:"10" help:"padding for component"`
 	FontSize     int             `arg:"--font-size" default:"10" help:"font size"`
 	WindowIcon   string          `arg:"--window-icon" default:"" help:"window ion"`

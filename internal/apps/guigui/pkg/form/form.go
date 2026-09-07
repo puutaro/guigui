@@ -32,8 +32,8 @@ type FormCmd struct {
 	ItemSeparator    string            `arg:"--item-separator" default:"!" help:"Separator for list items"`
 	Separator        string            `arg:"--separator" default:"|" help:"Separator for output values"`
 	DateFormat       string            `arg:"--date-format" default:"%Y:%m:%d" help:"Date format"`
-	Fields           []text.Base64Text `arg:"--field,separate" help:"Define fields in the form"`
-	FieldValues      []text.Base64Text `arg:"positional,separate" help:"field values"`
+	Fields           []text.Base64Text `arg:"--field,separate" help:"Define fields in the form (reco 'base64://' prefix about multiple line)"`
+	FieldValues      []text.Base64Text `arg:"positional,separate" help:"field values (reco 'base64://' prefix about multiple line)"`
 	SelectableLabels bool              `arg:"--selectable-labels" help:"stub for yad comp"`
 	NoButtons        bool              `arg:"--no-buttons" help:"stub for yad comp"`
 	window.WindowOptions
