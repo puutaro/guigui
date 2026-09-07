@@ -65,21 +65,20 @@ export const FormComponent = ({
     }, [formConfig, formValues]);
 
     // 画面ロード時、最初の入力フィールドがあればそこへフォーカスする
-    const firstFieldRef = useRef<HTMLDivElement | null>(null);
+    // const firstFieldRef = useRef<HTMLDivElement | null>(null);
+    const firstFocusRef = useRef<HTMLInputElement | HTMLButtonElement | null>(null);
     const hasFocusedRef = useRef(false);
     const firstFocusableIndex = formConfig?.fields.findIndex(field => field.type !== 'LBL') ?? -1;
 
     useEffect(() => {
-        if (!formConfig || hasFocusedRef.current) return;
+        // if (!formConfig || hasFocusedRef.current) return;
         let rafId: number;
         let timerId: ReturnType<typeof setTimeout>;
         rafId = requestAnimationFrame(() => {
             // 描画フレーム後に少しだけ遅延を入れる
             timerId = setTimeout(() => {
                 hasFocusedRef.current = true;
-                const target = firstFieldRef.current?.querySelector(
-                    'input, select, button, [tabindex="0"]'
-                ) as HTMLElement | null;
+                const target = firstFocusRef.current
                 if (!target) return
                 target.focus();
                 if (target instanceof HTMLInputElement) {
@@ -224,7 +223,6 @@ export const FormComponent = ({
 
                             return (
                                 <div
-                                    ref={isFirstTarget ? firstFieldRef : undefined}
                                     key={key}
                                     className="flex flex-col"
                                     style={{ paddingBottom: `${borderValue}px` }}
@@ -242,6 +240,7 @@ export const FormComponent = ({
 
                                     {field.type === 'TXT' && (
                                         <input
+                                            ref={isFirstTarget ? (el) => { firstFocusRef.current = el; } : undefined}
                                             type="text"
                                             autoCorrect="off"
                                             autoCapitalize="off"
@@ -271,6 +270,8 @@ export const FormComponent = ({
                                             historyItems={historyMap[field.label] || []}
                                             fontSize={fontSize}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                     {field.type === 'CB' && (
@@ -280,6 +281,8 @@ export const FormComponent = ({
                                             formValues={formValues}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                     {['BTN', 'FBTN'].includes(field.type) && (
@@ -288,6 +291,8 @@ export const FormComponent = ({
                                             fieldKey={key}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                     {['DIR', 'MDIR', 'CDIR'].includes(field.type) && (
@@ -297,6 +302,8 @@ export const FormComponent = ({
                                             formValues={formValues}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                     {['FL', 'MFL', 'SFL'].includes(field.type) && (
@@ -306,6 +313,8 @@ export const FormComponent = ({
                                             formValues={formValues}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                     {field.type === 'LBL' && (
@@ -323,6 +332,8 @@ export const FormComponent = ({
                                             formValues={formValues}
                                             setFieldValue={setFieldValue}
                                             borderValue={borderValue}
+                                            isFirstTarget={isFirstTarget}
+                                            firstFocusRef={firstFocusRef}
                                         />
                                     )}
                                 </div>

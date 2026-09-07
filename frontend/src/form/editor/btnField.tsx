@@ -6,26 +6,31 @@ export type BtnFieldProps = {
   fieldKey: string, 
   setFieldValue: (key: string, value: string) => void;
   borderValue: number;
+  isFirstTarget: boolean,
+  firstFocusRef: React.MutableRefObject<HTMLInputElement | HTMLButtonElement | null>
 }
 
 export const BtnField = ({ 
   field, 
   fieldKey ,
   setFieldValue,
-  borderValue 
+  borderValue,
+  isFirstTarget,
+  firstFocusRef,
 }: BtnFieldProps) => {
   return (
     <button
+      ref={isFirstTarget ? (el) => { firstFocusRef.current = el; } : undefined}
       type="button"
-        onClick={async () => {
-          try {
-            await RunCmd(
-              field.defaultValue,
-            );
-          } catch (err) {
-            console.error("Failed to run cmd by btn:", err);
-          }
-        }}
+      onClick={async () => {
+        try {
+          await RunCmd(
+            field.defaultValue,
+          );
+        } catch (err) {
+          console.error("Failed to run cmd by btn:", err);
+        }
+      }}
       className="border rounded bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-left "
       style={{ 
         padding: `${borderValue}px`,

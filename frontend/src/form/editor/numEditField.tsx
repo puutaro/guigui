@@ -8,13 +8,17 @@ export type NumSelectFieldProps = {
   formValues: Record<string, string>;
   setFieldValue: (key: string, value: string) => void;
   borderValue: number;
+  isFirstTarget: boolean,
+  firstFocusRef: React.MutableRefObject<HTMLInputElement | HTMLButtonElement | null>
 }
 export const NumEditField = ({ 
   field, 
   fieldKey, 
   formValues, 
   setFieldValue, 
-  borderValue 
+  borderValue,
+  isFirstTarget,
+  firstFocusRef,
 }: NumSelectFieldProps) => {
   const numSeparator = '!';
   const parts = (field.srcValue || "").split(numSeparator);
@@ -39,6 +43,7 @@ export const NumEditField = ({
   return (
     <div className="flex items-center">
       <input 
+        ref={isFirstTarget ? (el) => { firstFocusRef.current = el; } : undefined}
         type="number"
         step={stepVal}
         min={minVal}

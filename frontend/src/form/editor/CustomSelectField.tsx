@@ -9,6 +9,8 @@ export type CustomSelectFieldProps = {
     formValues: Record<string, string>;
     setFieldValue: (key: string, value: string) => void;
     borderValue: number;
+    isFirstTarget: boolean;
+    firstFocusRef: React.MutableRefObject<HTMLInputElement | HTMLButtonElement | null>;
 };
 
 export const CustomSelectField = ({
@@ -17,6 +19,8 @@ export const CustomSelectField = ({
                                       formValues,
                                       setFieldValue,
                                       borderValue,
+                                      isFirstTarget,
+                                      firstFocusRef,
                                   }: CustomSelectFieldProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -44,7 +48,6 @@ export const CustomSelectField = ({
             setSelectedIndex(-1);
             return;
         }
-        // 開いた時は現在選択されている値の位置にカーソルを合わせる
         const currentIndex = items.indexOf(currentValue);
         setSelectedIndex(currentIndex >= 0 ? currentIndex : 0);
     }, [isOpen, currentValue, items]);
@@ -60,34 +63,45 @@ export const CustomSelectField = ({
     }, [selectedIndex]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        e.preventDefault()
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            // e.stopPropagation();
-            // setIsOpen(false);
+        // Tab キーはフォーカス移動のためスルー
+        if (e.key === 'Tab') {
             return;
         }
-        // 閉じていてEnter/Space/上下キーを押したら開く
+        // Ctrl + Enter はフォーム送信などのグローバルショートカット用にスルー
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            return;
+        }
+        // 親（FormComponent）のグローバルキーイベントに干渉されないよう即座に伝播を止める
+        e.stopPropagation();
+
+        // 1. 閉じている場合
         if (!isOpen) {
             if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
                 e.preventDefault();
+                e.stopPropagation();
                 setIsOpen(true);
             }
             return;
         }
+
+        // 2. 開いている場合
         switch (e.key) {
             case 'ArrowDown': {
                 e.preventDefault();
+                e.stopPropagation();
                 setSelectedIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
                 break;
             }
             case 'ArrowUp': {
                 e.preventDefault();
+                e.stopPropagation();
                 setSelectedIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
                 break;
             }
             case 'Enter':
             case ' ': {
                 e.preventDefault();
+                e.stopPropagation();
                 if (selectedIndex >= 0 && items[selectedIndex]) {
                     setFieldValue(fieldKey, items[selectedIndex]);
                     setIsOpen(false);
@@ -102,8 +116,8 @@ export const CustomSelectField = ({
             }
         }
     };
+
     const handleBlur = (e: React.FocusEvent) => {
-        // 次にフォーカスが当たる要素が containerRef（自分自身やその子要素）の中に含まれていない場合のみ閉じる
         if (!containerRef.current?.contains(e.relatedTarget as Node)) {
             setIsOpen(false);
         }
@@ -111,14 +125,13 @@ export const CustomSelectField = ({
 
     return (
         <div ref={containerRef} className="relative w-full">
-            {/* キー操作を受け取るための button */}
             <button
+                ref={isFirstTarget ? (el) => { firstFocusRef.current = el; } : undefined}
                 type="button"
-                onClick={(e) => {
-                    e.currentTarget.focus();
-                    setIsOpen(!isOpen)
-                    }
-                }
+                tabIndex={0}
+                onClick={() => {
+                    setIsOpen((prev) => !prev);
+                }}
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
                 className="w-full border rounded text-left flex justify-between items-center bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -140,15 +153,12 @@ export const CustomSelectField = ({
                                 key={item}
                                 ref={(el) => (itemRefs.current[index] = el)}
                                 onMouseDown={(e) => {
-                                    // フォーカスが外れるのを防ぐ
                                     e.preventDefault();
                                 }}
                                 onClick={() => {
-                                    // シングルクリック：選択ハイライトのみ移動（テキスト未確定）
                                     setSelectedIndex(index);
                                 }}
                                 onDoubleClick={() => {
-                                    // ダブルクリック：値を確定してドロップダウンを閉じる
                                     setFieldValue(fieldKey, item);
                                     setIsOpen(false);
                                 }}

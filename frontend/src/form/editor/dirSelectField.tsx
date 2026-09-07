@@ -9,6 +9,8 @@ export type DirSelectFieldProps = {
   formValues: Record<string, string>;
   setFieldValue: (key: string, value: string) => void;
   borderValue: number;
+  isFirstTarget: boolean,
+  firstFocusRef: React.MutableRefObject<HTMLInputElement | HTMLButtonElement | null>
 }
 
 export const DirSelectField = ({ 
@@ -16,12 +18,15 @@ export const DirSelectField = ({
   fieldKey, 
   formValues, 
   setFieldValue, 
-  borderValue 
+  borderValue,
+  isFirstTarget,
+  firstFocusRef,
 }: DirSelectFieldProps) => {
   return (
     <div className="flex flex-col" style={{ paddingBottom: `${borderValue}px` }}>
       <div className="flex items-center space-x-2">
         <input 
+          ref={isFirstTarget ? (el) => { firstFocusRef.current = el; } : undefined}
           type="text" 
           autoCorrect="off"
           autoCapitalize="off"

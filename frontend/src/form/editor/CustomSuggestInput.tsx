@@ -13,6 +13,8 @@ export type CustomSuggestInputProps = {
     historyItems: SuggestHistoryItem[];
     fontSize: number;
     borderValue: number;
+    isFirstTarget: boolean,
+    firstFocusRef: React.MutableRefObject<HTMLInputElement | HTMLButtonElement | null>
 };
 
 export const CustomSuggestInput = ({
@@ -22,6 +24,8 @@ export const CustomSuggestInput = ({
                                        historyItems,
                                        fontSize,
                                        borderValue,
+                                       isFirstTarget,
+                                       firstFocusRef,
                                    }: CustomSuggestInputProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isAllSelected, setIsAllSelected] = useState(false);
@@ -128,6 +132,7 @@ export const CustomSuggestInput = ({
         <div ref={containerRef} className="relative w-full">
             <input
                 type="text"
+                ref={isFirstTarget ? firstFocusRef as React.RefObject<HTMLInputElement> : undefined}
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
@@ -162,7 +167,6 @@ export const CustomSuggestInput = ({
                     if (e.altKey && !isModifierKeyOnly) {
                     // ★ 入力欄に Mac 特殊文字（å, ≈, ç 等）が出力されるのを物理カット！
                     e.preventDefault();
-                    return;
                 }
                 // ★ 3. IME 変換中（日本語の確定Enterや変換Esc）はブラウザ/IMEに完全に任せる
                 if (e.nativeEvent.isComposing) {
