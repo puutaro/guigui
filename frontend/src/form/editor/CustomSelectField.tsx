@@ -71,9 +71,6 @@ export const CustomSelectField = ({
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             return;
         }
-        // 親（FormComponent）のグローバルキーイベントに干渉されないよう即座に伝播を止める
-        e.stopPropagation();
-
         // 1. 閉じている場合
         if (!isOpen) {
             if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
