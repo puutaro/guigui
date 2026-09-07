@@ -21,18 +21,18 @@ export const  ListComponent =
         borderValue,
    }: ListComponentProps
 ) => {
-        const searchInputRef = useRef<HTMLInputElement>(null);
         const [listItems, setListItems] = useState<string[]>([]);
         const [searchQuery, setSearchQuery] = useState("");
-        const [selectedIndex, setSelectedIndex] = useState(0);
+        const headerLines = listConfig?.headerLines ?? 0;
+        const [selectedIndex, setSelectedIndex] = useState(headerLines);
+        // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
         useEffect(() => {
             setSearchQuery("");
+            setSelectedIndex(headerLines)
         }, [listConfig]);
-        // 1. 全リストを「ヘッダー部分」と「検索対象のボディ部分」に分割
-        const headerLines = listConfig?.headerLines ?? 0;
         useEffect(() => {
           setSelectedIndex(headerLines);
-        }, [searchQuery, listConfig?.list, listItems]);
+        }, [searchQuery]);
 
         useEffect(() => {
             setListItems(listConfig?.list ?? []);
@@ -70,30 +70,27 @@ export const  ListComponent =
         const listItemRefs = useRef<(HTMLLIElement | null)[]>([]);
         // selectedIndex やリストの絞り込み結果が変わったときに、DOMが存在していればフォーカスを当てる
         useEffect(() => {
-            let rafId: number;
-            let timerId: ReturnType<typeof setTimeout>;
-            rafId = requestAnimationFrame(() => {
-                // 描画フレーム後に少しだけ遅延を入れる
-                timerId = setTimeout(()=>{
-                    const targetListElement = listItemRefs.current[selectedIndex];
-                    if (targetListElement) {
-                        // スクロールエリア内に入ってくるよう表示位置だけ調整
-                        targetListElement.scrollIntoView({ block: 'nearest' });
-                    }
-                    // フォーカスは常に input 要素へ
-                    searchInputRef.current?.focus();
-                }, 400)
-            });
-            // タイマーとrAFの両方をクリーンアップ
-            return () => {
-                cancelAnimationFrame(rafId);
-                clearTimeout(timerId);
-            };
+            const totalItems = headerAndFilteredBodyListItems.length;
+            // ★ 1. 現在の要素数に合わせて配列サイズを固定し、範囲外を切り捨てる
+            if (listItemRefs.current.length > totalItems) {
+                listItemRefs.current.length = totalItems;
+            }
+            // ★ 2. 途中の「画面上に既に存在しない（離脱した）DOM要素」を null にクリアする
+            for (let i = 0; i < listItemRefs.current.length; i++) {
+                const el = listItemRefs.current[i];
+                // DOMがすでにドキュメントから切断されている場合は参照を破棄
+                if (el && !document.body.contains(el)) {
+                    listItemRefs.current[i] = null;
+                }
+            }
+            // ★ 3. 目的のターゲットが存在することを確認してスクロール
+            const targetListElement = listItemRefs.current[selectedIndex];
+            if (targetListElement) {
+                targetListElement.scrollIntoView({ block: 'nearest' });
+            }
         }, [selectedIndex, filteredBodyItemObjs]);
-        listItemRefs.current = [];
-        // 最後に「確定」されていたテキストを保持する Ref
+
         const lastCommittedRef = useRef(searchQuery);
-        // IME変換中かどうかを保持する Ref
         const isComposingRef = useRef(false);
         const justEndedComposingRef = useRef(false);
         return (
@@ -120,7 +117,7 @@ export const  ListComponent =
                     </h1>
                 )}
                 <input
-                    ref={searchInputRef}
+                    autoFocus
                     type="text"
                     autoCorrect="off"
                     autoCapitalize="off"
@@ -154,7 +151,6 @@ export const  ListComponent =
                             searchQuery: searchQuery,
                             setSelectedIndex,
                             setSearchQuery,
-                            searchInputRef,
                             executes: listConfig?.executes ?? [],
                             execQuit: listConfig?.execQuits ?? [],
                             reloads: listConfig?.reloads ?? [],
@@ -203,7 +199,7 @@ export const  ListComponent =
                         filterItemOpjs={filteredBodyItemObjs}
                         setSearchQuery={setSearchQuery}
                         setSelectedIndex={setSelectedIndex}
-                        selectedIndex={selectedIndex} // ★ 追加
+                        selectedIndex={selectedIndex}
                         borderValue={borderValue}
                         headerLines={headerLines}
                     />                )}

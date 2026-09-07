@@ -32,7 +32,7 @@ export const HeaderDisplay = (
                 return (
                     <li
                         key={`header-${index}`}
-                        ref={(el) => (listItemRefs.current[index] = el)}
+                        ref={(el) => listItemRefs.current[index] = el}
                         style={{
                             padding: `${borderValue}px`,
                             margin: `calc(${borderValue}px /  2)`,

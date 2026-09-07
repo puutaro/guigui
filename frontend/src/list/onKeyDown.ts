@@ -13,7 +13,6 @@ export type OnKeyDownParams = {
     setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
     searchQuery: string;
     setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-    searchInputRef: React.RefObject<HTMLInputElement>;
     executes: ExecuteConfig[];
     execQuit: ExecuteConfig[];
     reloads: ExecuteConfig[];
@@ -35,7 +34,6 @@ export const onKeyDown = (params: OnKeyDownParams) => {
         setSelectedIndex,
         searchQuery,
         setSearchQuery,
-        searchInputRef,
         executes,
         execQuit,
         reloads,
