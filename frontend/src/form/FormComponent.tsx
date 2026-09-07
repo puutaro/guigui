@@ -67,17 +67,14 @@ export const FormComponent = ({
     // 画面ロード時、最初の入力フィールドがあればそこへフォーカスする
     // const firstFieldRef = useRef<HTMLDivElement | null>(null);
     const firstFocusRef = useRef<HTMLInputElement | HTMLButtonElement | null>(null);
-    const hasFocusedRef = useRef(false);
     const firstFocusableIndex = formConfig?.fields.findIndex(field => field.type !== 'LBL') ?? -1;
 
     useEffect(() => {
-        // if (!formConfig || hasFocusedRef.current) return;
         let rafId: number;
         let timerId: ReturnType<typeof setTimeout>;
         rafId = requestAnimationFrame(() => {
             // 描画フレーム後に少しだけ遅延を入れる
             timerId = setTimeout(() => {
-                hasFocusedRef.current = true;
                 const target = firstFocusRef.current
                 if (!target) return
                 target.focus();
