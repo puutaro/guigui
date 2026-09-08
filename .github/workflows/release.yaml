@@ -110,13 +110,20 @@ jobs:
           sudo apt-get install -y build-essential libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev
 
       - name: Install Linux Dependencies & Cross-Compiler (ARM64)
-        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          # qemu-user-static を先に入れてアーキテクチャ混在時のdpkgエラーを防ぐ
-          sudo apt-get install -y qemu-user-static
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
+          if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+          run: |
+            sudo dpkg --add-architecture arm64
+            sudo apt-get update
+            sudo apt-get install -y qemu-user-static
+
+            # arm64用はすべて ports.ubuntu.com に向ける
+            echo "deb [arch=arm64] https://ports.ubuntu.com/ubuntu-ports noble main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
+            echo "deb [arch=arm64] https://ports.ubuntu.com/ubuntu-ports noble-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+            echo "deb [arch=arm64] https://ports.ubuntu.com/ubuntu-ports noble-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+
+            sudo apt-get update
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
+
 
       - name: Build Wails App
         env:
