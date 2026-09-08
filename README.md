@@ -1,4 +1,7 @@
-## wevdi
+<img width="991" height="240" alt="webdi_bar" src="https://github.com/user-attachments/assets/ca61fff1-e7b3-4eee-9269-3f4ab8e9fa5e" />
+
+
+# wevdi
 
 This is daialog cli tool like gnu yad by linux, mac suport
 
