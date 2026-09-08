@@ -60,30 +60,24 @@ jobs:
   build:
     needs: setup
     runs-on: ${{ matrix.runner }}
-    # LinuxビルドはWails公式のクロスコンパイル対応イメージを使用し、ホスト依存関係の競合を回避
-    container: ${{ matrix.container }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: linux-amd64
             runner: ubuntu-latest
-            container: wailsapp/wails:v2.9.2
             goos: linux
             goarch: amd64
           - name: linux-arm64
             runner: ubuntu-latest
-            container: wailsapp/wails:v2.9.2
             goos: linux
             goarch: arm64
           - name: macos-amd64
             runner: macos-latest
-            container: ~
             goos: darwin
             goarch: amd64
           - name: macos-arm64
             runner: macos-latest
-            container: ~
             goos: darwin
             goarch: arm64
     env:
@@ -95,22 +89,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go (macOS runner only)
-        if: matrix.goos == 'darwin'
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
 
-      - name: Set up Node.js (macOS runner only)
-        if: matrix.goos == 'darwin'
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Wails CLI (macOS runner only)
-        if: matrix.goos == 'darwin'
+      - name: Install Wails CLI
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install Linux Dependencies (AMD64)
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Install Linux Dependencies & Cross-Compiler (ARM64)
+        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          # qemu-user-static を先に入れてアーキテクチャ混在時のdpkgエラーを防ぐ
+          sudo apt-get install -y qemu-user-static
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64
 
       - name: Build Wails App
         env:
@@ -118,7 +124,20 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: '1'
         run: |
-          # Linuxコンテナ内ではすでにGo, Node, Wails, WebKit2GTK環境が整っています
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            if [ "${{ matrix.goarch }}" = "arm64" ]; then
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR="/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+            else
+              export CC=gcc
+              export CXX=g++
+              export PKG_CONFIG_PATH=""
+              export PKG_CONFIG_LIBDIR="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig"
+            fi
+          fi
+
           BUILD_TAGS="-tags webkit2_41"
           echo "Building with tags: $BUILD_TAGS for GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}"
           wails build $BUILD_TAGS --clean -ldflags="-s -w -X main.version=${{ env.TAG_VERSION }}"
@@ -126,7 +145,6 @@ jobs:
       - name: Rename and Prepare Binary Artifacts
         run: |
           mkdir -p final_artifacts
-          
           BUILT_BINARY=""
           
           if [ "${{ matrix.goos }}" = "darwin" ]; then
@@ -143,15 +161,13 @@ jobs:
             fi
           fi
           
-          echo "Target binary resolved as: $BUILT_BINARY"
-          
           if [ -n "$BUILT_BINARY" ] && [ -f "$BUILT_BINARY" ]; then
             APP_NAME="webdi"
             DEST_NAME="${APP_NAME}_${{ env.TAG_VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}"
             cp "$BUILT_BINARY" "final_artifacts/$DEST_NAME"
             echo "Successfully prepared: $DEST_NAME"
           else
-            echo "Error: Built binary not found. Dumping build directory structure:"
+            echo "Error: Built binary not found."
             find build -maxdepth 3 || true
             exit 1
           fi
@@ -187,11 +203,9 @@ jobs:
           if [ -f "$NOTE_PATH" ]; then
             echo "NOTE_PATH=$NOTE_PATH" >> $GITHUB_ENV
             echo "note_exists=true" >> $GITHUB_ENV
-            echo "==> Found release note: $NOTE_PATH"
           else
             echo "NOTE_PATH=" >> $GITHUB_ENV
             echo "note_exists=false" >> $GITHUB_ENV
-            echo "==> Warning: Release note file not found."
           fi
 
       - name: Download all artifacts
@@ -203,7 +217,6 @@ jobs:
         run: |
           mkdir -p release_files
           find downloaded-binaries -type f -exec mv {} release_files/ \;
-          ls -la release_files/
 
       - name: Create Release and Upload Binaries
         uses: softprops/action-gh-release@v2
