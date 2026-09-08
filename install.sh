@@ -91,9 +91,9 @@ case "$OS" in
         echo "==> Detected version: ${VERSION}"
         ARCH="$(uname -m)"
         if [ "$ARCH" = "x86_64" ]; then
-            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi${VERSION}_linux_amd64"
+            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi_${VERSION}_linux_amd64"
         elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi${VERSION}_linux_arm64"
+            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi_${VERSION}_linux_arm64"
         else
             echo "Error: Unsupported Linux architecture ($ARCH)" >&2
             exit 1
