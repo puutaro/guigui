@@ -90,8 +90,6 @@ export const  ListComponent =
             }
         }, [selectedIndex, filteredBodyItemObjs]);
 
-        const lastCommittedRef = useRef(searchQuery);
-        const isComposingRef = useRef(false);
         const justEndedComposingRef = useRef(false);
         return (
             <div
@@ -134,11 +132,9 @@ export const  ListComponent =
 
                     }}
                     onCompositionStart={() => {
-                        isComposingRef.current = true;
                         justEndedComposingRef.current = false;
                     }}
                     onCompositionEnd={() => {
-                        isComposingRef.current = false;
                         justEndedComposingRef.current = true;
                     }}
                     className="border-b border-gray-300 rounded focus:outline-none focus:border-blue-500"
@@ -158,8 +154,6 @@ export const  ListComponent =
                             headerLines,
                             isCycle: listConfig?.cycle ?? false,
                             keepConfig: keepConfigRef.current,
-                            isComposingRef: isComposingRef,
-                            lastCommittedRef: lastCommittedRef,
                             justEndedComposingRef: justEndedComposingRef,
                         })
                     }}
