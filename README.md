@@ -1,17 +1,6 @@
-## About
+## wevdi
 
-Wails template which includes: Vite, React, TS, TailwindCSS out of the box.
-
-Build with `Wails CLI v2.0.0`.
-
-To use this [template](https://wails.io/docs/community/templates):
-```shell
-wails init -n "Your Project Name" -t https://github.com/hotafrika/wails-vite-react-ts-tailwind-template
-cd frontend/src
-npm install
-```
-
-[Here](scripts) you can find useful scripts for building on different platforms and Wails CLI installation.
+This is daialog cli tool like gnu yad by linux, mac suport
 
 ## Install
 
