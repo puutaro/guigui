@@ -1,4 +1,6 @@
-<img width="991" height="240" alt="webdi_bar" src="https://github.com/user-attachments/assets/ca61fff1-e7b3-4eee-9269-3f4ab8e9fa5e" />
+<!-- <img width="991" height="240" alt="webdi_bar" src="https://github.com/user-attachments/assets/ca61fff1-e7b3-4eee-9269-3f4ab8e9fa5e" /> -->
+
+<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/d2adebed-749d-4e30-bc72-1b46945b3137" />
 
 
 # wevdi
