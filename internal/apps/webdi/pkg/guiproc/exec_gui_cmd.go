@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
 )
 
 func ExecGuiCmd(cmdArgs []string, appConfig *args.AppConfig) (int, error) {

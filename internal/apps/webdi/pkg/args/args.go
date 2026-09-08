@@ -10,11 +10,11 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/alexflint/go-arg"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowcmd"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/window"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/form"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/list"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/windowcmd"
 )
 
 type CLI struct {
@@ -32,11 +32,11 @@ type AppConfig struct {
 }
 
 func (CLI) Version() string {
-	var info GuiGuiInfo
-	if _, err := toml.Decode(string(GuiGuiInfoRaw), &info); err != nil {
+	var info WebdiInfo
+	if _, err := toml.Decode(string(WebdiInfoRaw), &info); err != nil {
 		return ""
 	}
-	return info.GuiGui.Version
+	return info.Webdi.Version
 }
 
 func Parse() (*AppConfig, error) {

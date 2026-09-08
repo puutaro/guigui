@@ -12,14 +12,14 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/appmode"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowcmd"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/appmode"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/image"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/text"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/form"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/list"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/windowcmd"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 

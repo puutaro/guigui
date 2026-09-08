@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/form"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/list"
 )
 
 type GuiRequest struct {

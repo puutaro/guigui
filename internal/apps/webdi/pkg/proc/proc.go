@@ -15,13 +15,13 @@ const NoProcessSignal = -1
 
 func GetPidByGuiProcessRunning(machineId string) int {
 	kwMachineId := machineId
-	kwGuigui := "guigui"
+	kwWebdi := "webdi"
 	kwGuiMode := "--gui-mode"
 
 	if runtime.GOOS == "darwin" {
-		return getPidMacFast(kwMachineId, kwGuigui, kwGuiMode)
+		return getPidMacFast(kwMachineId, kwWebdi, kwGuiMode)
 	} else {
-		return getPidLinuxFast(kwMachineId, kwGuigui, kwGuiMode)
+		return getPidLinuxFast(kwMachineId, kwWebdi, kwGuiMode)
 	}
 }
 

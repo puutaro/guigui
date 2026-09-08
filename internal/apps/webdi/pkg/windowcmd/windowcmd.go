@@ -1,6 +1,6 @@
 package windowcmd
 
-import "github.com/puutaro/guigui/internal/apps/guigui/pkg/args/unique"
+import "github.com/puutaro/webdi/internal/apps/webdi/pkg/args/unique"
 
 type WindowCmd struct {
 	Show bool `arg:"--show,required" help:"show gui"`

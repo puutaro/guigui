@@ -1,4 +1,4 @@
-module github.com/puutaro/guigui
+module github.com/puutaro/webdi
 
 go 1.25.0
 

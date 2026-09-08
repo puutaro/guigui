@@ -1,4 +1,4 @@
-//go:generate sh -c "sh ./gen_guigui_info.sh"
+//go:generate sh -c "sh ./gen_webdi_info.sh"
 package main
 
 import (
@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/guiproc"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/image"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/guiproc"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"

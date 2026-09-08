@@ -16,11 +16,11 @@ jobs:
       - name: Extract version from configuration file
         id: get_version
         run: |
-          CONFIG_FILE="guigui.toml"
+          CONFIG_FILE="webdi.toml"
           if [ -f "yomel.toml" ]; then
             CONFIG_FILE="yomel.toml"
-          elif [ -f "guigui.toml" ]; then
-            CONFIG_FILE="guigui.toml"
+          elif [ -f "webdi.toml" ]; then
+            CONFIG_FILE="webdi.toml"
           fi
 
           echo "Using config file: $CONFIG_FILE"
@@ -37,7 +37,7 @@ jobs:
               data = tomllib.load(f)
           
           version = ""
-          for key in ["guigui", "yomel", "app"]:
+          for key in ["webdi", "yomel", "app"]:
               if key in data and "version" in data[key]:
                   version = data[key]["version"]
                   break
@@ -161,8 +161,8 @@ jobs:
           # macOS (.appバンドルまたはバイナリの探索)
           if [ "${{ matrix.goos }}" = "darwin" ]; then
             # 1. build/bin 内の .app/Contents/MacOS/ 内にあるバイナリを探す
-            if [ -d "build/bin/guigui.app/Contents/MacOS" ]; then
-              BUILT_BINARY=$(find build/bin/guigui.app/Contents/MacOS -type f | head -n 1)
+            if [ -d "build/bin/webdi.app/Contents/MacOS" ]; then
+              BUILT_BINARY=$(find build/bin/webdi.app/Contents/MacOS -type f | head -n 1)
             fi
             # 2. 見つからない場合は build/bin 以下から通常のファイルを探索
             if [ -z "$BUILT_BINARY" ]; then
@@ -171,15 +171,15 @@ jobs:
           else
             # Linuxなど
             BUILT_BINARY=$(find build/bin -type f -maxdepth 2 | head -n 1)
-            if [ -z "$BUILT_BINARY" ] && [ -f "build/guigui" ]; then
-              BUILT_BINARY="build/guigui"
+            if [ -z "$BUILT_BINARY" ] && [ -f "build/webdi" ]; then
+              BUILT_BINARY="build/webdi"
             fi
           fi
           
           echo "Target binary resolved as: $BUILT_BINARY"
           
           if [ -n "$BUILT_BINARY" ] && [ -f "$BUILT_BINARY" ]; then
-            APP_NAME="guigui"
+            APP_NAME="webdi"
             DEST_NAME="${APP_NAME}_${{ env.TAG_VERSION }}_${{ matrix.goos }}_${{ matrix.goarch }}"
             cp "$BUILT_BINARY" "final_artifacts/$DEST_NAME"
             echo "Successfully prepared: $DEST_NAME"

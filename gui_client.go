@@ -7,12 +7,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/form"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/proc"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/text"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/form"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/list"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/proc"
 )
 
 func (app *App) GetSendRequest() network.GuiRequestForWebview {

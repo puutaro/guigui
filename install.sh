@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-REPO_URL="https://github.com/puutaro/guigui"
-TOML_URL="https://raw.githubusercontent.com/puutaro/guigui/master/guigui.toml"
-BINARY_NAME="guigui"
+REPO_URL="https://github.com/puutaro/webdi.git"
+TOML_URL="https://raw.githubusercontent.com/puutaro/webdi/master/webdi.toml"
+BINARY_NAME="webdi"
 INSTALL_DIR="/usr/local/bin"
 OS="$(uname -s)"
 
@@ -81,19 +81,19 @@ case "$OS" in
         TEMP_DIR=$(mktemp -d)
         trap 'rm -rf "$TEMP_DIR"' EXIT
 
-        echo "==> Fetching version from guigui.toml..."
+        echo "==> Fetching version from webdi.toml..."
         RAW_VERSION=$(curl -fsSL "$TOML_URL" | grep -E '^[[:space:]]*version[[:space:]]*=' | head -n 1 | sed -E 's/.*=[[:space:]]*"([^"]+)".*/\1/')
         if [ -z "$RAW_VERSION" ]; then
-            echo "Error: Failed to parse version from guigui.toml" >&2
+            echo "Error: Failed to parse version from webdi.toml" >&2
             exit 1
         fi
         VERSION="v${RAW_VERSION}"
         echo "==> Detected version: ${VERSION}"
         ARCH="$(uname -m)"
         if [ "$ARCH" = "x86_64" ]; then
-            DOWNLOAD_URL="https://github.com/puutaro/guigui/releases/download/${VERSION}/guigui_${VERSION}_linux_amd64"
+            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi${VERSION}_linux_amd64"
         elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            DOWNLOAD_URL="https://github.com/puutaro/guigui/releases/download/${VERSION}/guigui_${VERSION}_linux_arm64"
+            DOWNLOAD_URL="https://github.com/puutaro/webdi/releases/download/${VERSION}/webdi${VERSION}_linux_arm64"
         else
             echo "Error: Unsupported Linux architecture ($ARCH)" >&2
             exit 1
@@ -109,7 +109,7 @@ case "$OS" in
         ensure_node
         ensure_wails
 
-        MAC_BUILD_DIR="$HOME/.guigui"
+        MAC_BUILD_DIR="$HOME/.webdi"
         
         if [ -d "$MAC_BUILD_DIR" ]; then
             echo "==> Updating repository in $MAC_BUILD_DIR..."

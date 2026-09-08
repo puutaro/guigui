@@ -1,6 +1,6 @@
 package window
 
-import "github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
+import "github.com/puutaro/webdi/internal/apps/webdi/pkg/args/text"
 
 type WindowOptions struct {
 	Title        string          `arg:"--title" help:"window title string"`

@@ -10,9 +10,9 @@ import (
 	// goruntime "runtime"
 
 	"github.com/fstanis/screenresolution"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/list"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/network"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/windowtool"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/list"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/network"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/windowtool"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -139,7 +139,7 @@ func minimizeGUi(
 	ctx context.Context,
 	id string,
 ) {
-	title := "Guigui sleeping..."
+	title := "Webdi sleeping..."
 	runtime.WindowSetTitle(ctx, title)
 	runtime.EventsEmit(ctx, "req", network.GuiRequestForWebview{
 		Id:       id,

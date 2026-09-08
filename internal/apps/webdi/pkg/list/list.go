@@ -6,11 +6,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/gui"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/image"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/text"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/unique"
-	"github.com/puutaro/guigui/internal/apps/guigui/pkg/args/window"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/gui"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/image"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/text"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/unique"
+	"github.com/puutaro/webdi/internal/apps/webdi/pkg/args/window"
 )
 
 type ListCmd struct {

@@ -5,7 +5,7 @@ This is daialog cli tool like gnu yad by linux, mac suport
 ## Install
 
 ```
-curl https://raw.githubusercontent.com/puutaro/guigui/refs/heads/master/install.sh \
+curl https://raw.githubusercontent.com/puutaro/webdi/refs/heads/master/install.sh \
 | bash
 ```
 

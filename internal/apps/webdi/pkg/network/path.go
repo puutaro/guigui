@@ -7,7 +7,7 @@ import (
 )
 
 func GetAppDir() string {
-	appDir := filepath.Join(os.TempDir(), "guigui")
+	appDir := filepath.Join(os.TempDir(), "webdi")
 	return appDir
 }
 func getReqJsonDirPath() string {
