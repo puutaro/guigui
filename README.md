@@ -23,6 +23,11 @@ While it shares familiar concepts with tools like yad and fzf, webdi delivers a 
 
 ### Unrivaled CLI Integration: An exceptional Wails application engineered specifically for terminal power users.  
 
+## Demo
+
+<img width="1571" height="1018" alt="webdi_demo" src="https://github.com/user-attachments/assets/a40a3243-9e6d-4b60-b69b-261b72848aee" />
+
+
 ## Install
 
 ```
