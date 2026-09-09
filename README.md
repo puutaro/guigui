@@ -1,4 +1,17 @@
-## wevdi
+<!-- <img width="991" height="240" alt="webdi_bar" src="https://github.com/user-attachments/assets/ca61fff1-e7b3-4eee-9269-3f4ab8e9fa5e" /> -->
+
+<!-- <img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/5e5be55f-df8b-4d9d-87aa-5d7ea25387d9" /> -->
+
+<!-- <img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/d2adebed-749d-4e30-bc72-1b46945b3137" /> -->
+
+<!-- <img width="1000" height="500" alt="webdi_white" src="https://github.com/user-attachments/assets/732cb449-95f0-46c5-8b0a-95a089661f3f" /> -->
+
+<!-- <img width="1000" height="500" alt="webdi_white2" src="https://github.com/user-attachments/assets/970fdee4-a3b1-455b-b20e-6ad5b0b1b95a" /> -->
+
+<img width="1000" height="500" alt="webdi_white" src="https://github.com/user-attachments/assets/e630dd39-63ae-42c1-9662-dd5ab5024ee2" />
+
+
+# wevdi
 
 This is daialog cli tool like gnu yad by linux, mac suport
 
@@ -22,6 +35,11 @@ While it shares familiar concepts with tools like yad and fzf, webdi delivers a 
 ### Persistent Resident Mode (--keep): By using the --keep flag, the dialog stays active in the background, allowing you to use it as a persistent floating web page or an ultra-fast web UI prototyping tool.  
 
 ### Unrivaled CLI Integration: An exceptional Wails application engineered specifically for terminal power users.  
+
+## Demo
+
+<img width="1571" height="1018" alt="webdi_demo" src="https://github.com/user-attachments/assets/a40a3243-9e6d-4b60-b69b-261b72848aee" />
+
 
 ## Install
 
