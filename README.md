@@ -6,7 +6,9 @@
 
 <!-- <img width="1000" height="500" alt="webdi_white" src="https://github.com/user-attachments/assets/732cb449-95f0-46c5-8b0a-95a089661f3f" /> -->
 
-<img width="1000" height="500" alt="webdi_white2" src="https://github.com/user-attachments/assets/970fdee4-a3b1-455b-b20e-6ad5b0b1b95a" />
+<!-- <img width="1000" height="500" alt="webdi_white2" src="https://github.com/user-attachments/assets/970fdee4-a3b1-455b-b20e-6ad5b0b1b95a" /> -->
+
+<img width="1000" height="500" alt="webdi_white" src="https://github.com/user-attachments/assets/e630dd39-63ae-42c1-9662-dd5ab5024ee2" />
 
 
 # wevdi
