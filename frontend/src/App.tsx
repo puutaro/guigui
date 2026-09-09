@@ -159,7 +159,11 @@ function App() {
             {/* 2. 残りのコンテンツエリア */}
             <div
                 className="flex-1 h-0 overflow-hidden flex flex-col"
-                style={{ padding: `${borderValue}px` }}
+                style={{ 
+                    padding: `${borderValue}px` ,
+                    marginLeft: `calc(${borderValue}px)` ,
+                    marginRight: `calc(${borderValue}px)` ,
+                }}
             >
                 <div className="h-full w-full overflow-hidden flex flex-col">
                     {viewType === VIEW_MODES.FORM && (
