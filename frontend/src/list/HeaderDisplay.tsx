@@ -37,7 +37,7 @@ export const HeaderDisplay = (
                             padding: `${borderValue}px`,
                             margin: `calc(${borderValue}px /  2)`,
                         }}
-                        className="rounded select-none list-none"
+                        className="rounded select-none list-none break-all"
                     >
                         {obj.renderedContent}
                     </li>
